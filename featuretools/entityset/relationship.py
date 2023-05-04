@@ -47,24 +47,18 @@ class Relationship(object):
         return cls(es, parent_dataframe, parent_column, child_dataframe, child_column)
 
     def __repr__(self):
-        ret = "<Relationship: %s.%s -> %s.%s>" % (
-            self._child_dataframe_name,
-            self._child_column_name,
-            self._parent_dataframe_name,
-            self._parent_column_name,
-        )
-
-        return ret
+        return f"<Relationship: {self._child_dataframe_name}.{self._child_column_name} -> {self._parent_dataframe_name}.{self._parent_column_name}>"
 
     def __eq__(self, other):
-        if not isinstance(other, self.__class__):
-            return False
-
         return (
-            self._parent_dataframe_name == other._parent_dataframe_name
-            and self._child_dataframe_name == other._child_dataframe_name
-            and self._parent_column_name == other._parent_column_name
-            and self._child_column_name == other._child_column_name
+            (
+                self._parent_dataframe_name == other._parent_dataframe_name
+                and self._child_dataframe_name == other._child_dataframe_name
+                and self._parent_column_name == other._parent_column_name
+                and self._child_column_name == other._child_column_name
+            )
+            if isinstance(other, self.__class__)
+            else False
         )
 
     def __hash__(self):
@@ -103,7 +97,7 @@ class Relationship(object):
         if self._is_unique():
             return self._parent_dataframe_name
         else:
-            return "%s[%s]" % (self._parent_dataframe_name, self._child_column_name)
+            return f"{self._parent_dataframe_name}[{self._child_column_name}]"
 
     @property
     def child_name(self):
@@ -111,7 +105,7 @@ class Relationship(object):
         if self._is_unique():
             return self._child_dataframe_name
         else:
-            return "%s[%s]" % (self._child_dataframe_name, self._child_column_name)
+            return f"{self._child_dataframe_name}[{self._child_column_name}]"
 
     def to_dictionary(self):
         return {
@@ -176,8 +170,7 @@ class RelationshipPath(object):
         return self._relationships_with_direction[index]
 
     def __iter__(self):
-        for is_forward, relationship in self._relationships_with_direction:
-            yield is_forward, relationship
+        yield from self._relationships_with_direction
 
     def __len__(self):
         return len(self._relationships_with_direction)
@@ -194,14 +187,11 @@ class RelationshipPath(object):
 
     def __repr__(self):
         if self._relationships_with_direction:
-            path = "%s.%s" % (next(self.dataframes()), self.name)
+            path = f"{next(self.dataframes())}.{self.name}"
         else:
             path = "[]"
-        return "<RelationshipPath %s>" % path
+        return f"<RelationshipPath {path}>"
 
 
 def _direction_name(is_forward, relationship):
-    if is_forward:
-        return relationship.parent_name
-    else:
-        return relationship.child_name
+    return relationship.parent_name if is_forward else relationship.child_name

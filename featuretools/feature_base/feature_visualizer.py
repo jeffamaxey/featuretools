@@ -66,7 +66,7 @@ def graph_feature(feature, to_file=None, description=False, **kwargs):
 
     for df_name in dataframes:
         dataframe_name = (
-            "\u2605 {} (target)".format(df_name)
+            f"\u2605 {df_name} (target)"
             if df_name == feature.dataframe_name
             else df_name
         )
@@ -80,19 +80,15 @@ def graph_feature(feature, to_file=None, description=False, **kwargs):
         step_num = max_depth - layer
         if num_primitives == 1:
             type_str = (
-                '<FONT POINT-SIZE="12"><B>{}</B><BR></BR></FONT>'.format(prim_type)
+                f'<FONT POINT-SIZE="12"><B>{prim_type}</B><BR></BR></FONT>'
                 if prim_type
                 else ""
             )
-            prim_label = "<{}{}>".format(type_str, prim_label)
+            prim_label = f"<{type_str}{prim_label}>"
         else:
-            step = "Step {}".format(step_num)
-            type_str = "   " + prim_type if prim_type else ""
-            prim_label = (
-                '<<FONT POINT-SIZE="12"><B>{}:</B>{}<BR></BR></FONT>{}>'.format(
-                    step, type_str, prim_label
-                )
-            )
+            step = f"Step {step_num}"
+            type_str = f"   {prim_type}" if prim_type else ""
+            prim_label = f'<<FONT POINT-SIZE="12"><B>{step}:</B>{type_str}<BR></BR></FONT>{prim_label}>'
 
         # sink first layer transform primitive if multiple primitives
         if step_num == 1 and prim_type == "Transform" and num_primitives > 1:
@@ -133,7 +129,7 @@ def get_feature_data(feat, dataframes, groupbys, edges, primitives, layer=0):
     dataframe_dict = dataframes[feat.dataframe_name]
 
     # if we've already explored this feat, continue
-    feat_node = "{}:{}".format(feat.dataframe_name, feat_name)
+    feat_node = f"{feat.dataframe_name}:{feat_name}"
     if feat_name in dataframe_dict["columns"] or feat_name in dataframe_dict["feats"]:
         return feat_node, layer
 
@@ -150,13 +146,13 @@ def get_feature_data(feat, dataframes, groupbys, edges, primitives, layer=0):
 
     # 3) add primitive node
     if feat.primitive.name or isinstance(feat, DirectFeature):
-        prim_name = feat.primitive.name if feat.primitive.name else "join"
         prim_type = ""
         if isinstance(feat, AggregationFeature):
             prim_type = "Aggregation"
         elif isinstance(feat, TransformFeature):
             prim_type = "Transform"
-        primitive_node = "{}_{}_{}".format(layer, feat_name, prim_name)
+        prim_name = feat.primitive.name if feat.primitive.name else "join"
+        primitive_node = f"{layer}_{feat_name}_{prim_name}"
         primitives.append((primitive_node, prim_name.upper(), layer, prim_type))
 
         edges[1].append([primitive_node, base_node])
@@ -165,20 +161,18 @@ def get_feature_data(feat, dataframes, groupbys, edges, primitives, layer=0):
     # 4) add groupby/join edges and nodes
     dependencies = [(dep.hash(), dep) for dep in feat.get_dependencies()]
     for is_forward, r in feat.relationship_path:
+        if r.child_dataframe.ww.name not in dataframes:
+            add_dataframe(r.child_dataframe, dataframes)
         if is_forward:
-            if r.child_dataframe.ww.name not in dataframes:
-                add_dataframe(r.child_dataframe, dataframes)
             dataframes[r.child_dataframe.ww.name]["columns"].add(r._child_column_name)
-            child_node = "{}:{}".format(r.child_dataframe.ww.name, r._child_column_name)
+            child_node = f"{r.child_dataframe.ww.name}:{r._child_column_name}"
             edges[0].append([base_node, child_node])
         else:
-            if r.child_dataframe.ww.name not in dataframes:
-                add_dataframe(r.child_dataframe, dataframes)
             dataframes[r.child_dataframe.ww.name]["columns"].add(r._child_column_name)
-            child_node = "{}:{}".format(r.child_dataframe.ww.name, r._child_column_name)
+            child_node = f"{r.child_dataframe.ww.name}:{r._child_column_name}"
             child_name = child_node.replace(":", "--")
-            groupby_node = "{}_groupby_{}".format(feat_name, child_name)
-            groupby_name = "group by\n{}".format(r._child_column_name)
+            groupby_node = f"{feat_name}_groupby_{child_name}"
+            groupby_name = f"group by\n{r._child_column_name}"
             groupbys.append((groupby_node, groupby_name))
             edges[0].append([child_node, groupby_node])
             edges[1].append([groupby_node, base_node])
@@ -197,10 +191,10 @@ def get_feature_data(feat, dataframes, groupbys, edges, primitives, layer=0):
         else:
             dataframes[groupby.dataframe_name]["feats"].add(groupby_name)
 
-        child_node = "{}:{}".format(groupby.dataframe_name, groupby_name)
+        child_node = f"{groupby.dataframe_name}:{groupby_name}"
         child_name = child_node.replace(":", "--")
-        groupby_node = "{}_groupby_{}".format(feat_name, child_name)
-        groupby_name = "group by\n{}".format(groupby_name)
+        groupby_node = f"{feat_name}_groupby_{child_name}"
+        groupby_name = f"group by\n{groupby_name}"
         groupbys.append((groupby_node, groupby_name))
         edges[0].append([child_node, groupby_node])
         edges[1].append([groupby_node, base_node])
@@ -240,10 +234,10 @@ def get_dataframe_table(dataframe_name, dataframe_dict):
     # If the index is used, make sure it's the first element in the table
     clean_index = html.escape(index)
     if index in columns:
-        rows = [COL_TEMPLATE.format(clean_index, clean_index + " (index)")]
+        rows = [COL_TEMPLATE.format(clean_index, f"{clean_index} (index)")]
         columns.discard(index)
     elif index in targets:
-        rows = [TARGET_TEMPLATE.format(clean_index, clean_index + " (index)")]
+        rows = [TARGET_TEMPLATE.format(clean_index, f"{clean_index} (index)")]
         targets.discard(index)
     else:
         rows = []
@@ -256,7 +250,6 @@ def get_dataframe_table(dataframe_name, dataframe_dict):
         col = html.escape(col)
         rows.append(template.format(col, col))
 
-    table = TABLE_TEMPLATE.format(
+    return TABLE_TEMPLATE.format(
         dataframe_name=dataframe_name, table_cols="\n".join(rows)
     )
-    return table

@@ -49,7 +49,7 @@ class Count(AggregationPrimitive):
         where_str,
         use_prev_str,
     ):
-        return "COUNT(%s%s%s)" % (relationship_path_name, where_str, use_prev_str)
+        return f"COUNT({relationship_path_name}{where_str}{use_prev_str})"
 
 
 class Sum(AggregationPrimitive):
@@ -71,10 +71,7 @@ class Sum(AggregationPrimitive):
     description_template = "the sum of {}"
 
     def get_function(self, agg_type=Library.PANDAS):
-        if agg_type in [Library.DASK, Library.SPARK]:
-            return "sum"
-
-        return np.sum
+        return "sum" if agg_type in [Library.DASK, Library.SPARK] else np.sum
 
 
 class Mean(AggregationPrimitive):
@@ -162,10 +159,7 @@ class Min(AggregationPrimitive):
     description_template = "the minimum of {}"
 
     def get_function(self, agg_type=Library.PANDAS):
-        if agg_type in [Library.DASK, Library.SPARK]:
-            return "min"
-
-        return np.min
+        return "min" if agg_type in [Library.DASK, Library.SPARK] else np.min
 
 
 class Max(AggregationPrimitive):
@@ -185,10 +179,7 @@ class Max(AggregationPrimitive):
     description_template = "the maximum of {}"
 
     def get_function(self, agg_type=Library.PANDAS):
-        if agg_type in [Library.DASK, Library.SPARK]:
-            return "max"
-
-        return np.max
+        return "max" if agg_type in [Library.DASK, Library.SPARK] else np.max
 
 
 class NumUnique(AggregationPrimitive):
@@ -266,20 +257,18 @@ class NumTrue(AggregationPrimitive):
     description_template = "the number of times {} is true"
 
     def get_function(self, agg_type=Library.PANDAS):
-        if agg_type == Library.DASK:
+        if agg_type != Library.DASK:
+            return np.sum
+        def chunk(s):
+            chunk_sum = s.agg(np.sum)
+            if chunk_sum.dtype == "bool":
+                chunk_sum = chunk_sum.astype("int64")
+            return chunk_sum
 
-            def chunk(s):
-                chunk_sum = s.agg(np.sum)
-                if chunk_sum.dtype == "bool":
-                    chunk_sum = chunk_sum.astype("int64")
-                return chunk_sum
+        def agg(s):
+            return s.agg(np.sum)
 
-            def agg(s):
-                return s.agg(np.sum)
-
-            return dd.Aggregation(self.name, chunk=chunk, agg=agg)
-
-        return np.sum
+        return dd.Aggregation(self.name, chunk=chunk, agg=agg)
 
 
 class PercentTrue(AggregationPrimitive):
@@ -516,10 +505,7 @@ class Std(AggregationPrimitive):
     description_template = "the standard deviation of {}"
 
     def get_function(self, agg_type=Library.PANDAS):
-        if agg_type in [Library.DASK, Library.SPARK]:
-            return "std"
-
-        return np.std
+        return "std" if agg_type in [Library.DASK, Library.SPARK] else np.std
 
 
 class First(AggregationPrimitive):

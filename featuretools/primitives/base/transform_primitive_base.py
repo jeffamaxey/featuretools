@@ -10,13 +10,9 @@ class TransformPrimitive(PrimitiveBase):
     uses_full_dataframe = False
 
     def generate_name(self, base_feature_names):
-        return "%s(%s%s)" % (
-            self.name.upper(),
-            ", ".join(base_feature_names),
-            self.get_args_string(),
-        )
+        return f'{self.name.upper()}({", ".join(base_feature_names)}{self.get_args_string()})'
 
     def generate_names(self, base_feature_names):
         n = self.number_output_features
         base_name = self.generate_name(base_feature_names)
-        return [base_name + "[%s]" % i for i in range(n)]
+        return [f"{base_name}[{i}]" for i in range(n)]

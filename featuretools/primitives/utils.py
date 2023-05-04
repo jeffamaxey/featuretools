@@ -21,10 +21,14 @@ def get_aggregation_primitives():
     aggregation_primitives = set([])
     for attribute_string in dir(featuretools.primitives):
         attribute = getattr(featuretools.primitives, attribute_string)
-        if isclass(attribute):
-            if issubclass(attribute, featuretools.primitives.AggregationPrimitive):
-                if attribute.name:
-                    aggregation_primitives.add(attribute)
+        if (
+            isclass(attribute)
+            and issubclass(
+                attribute, featuretools.primitives.AggregationPrimitive
+            )
+            and attribute.name
+        ):
+            aggregation_primitives.add(attribute)
     return {prim.name.lower(): prim for prim in aggregation_primitives}
 
 
@@ -33,10 +37,14 @@ def get_transform_primitives():
     transform_primitives = set([])
     for attribute_string in dir(featuretools.primitives):
         attribute = getattr(featuretools.primitives, attribute_string)
-        if isclass(attribute):
-            if issubclass(attribute, featuretools.primitives.TransformPrimitive):
-                if attribute.name:
-                    transform_primitives.add(attribute)
+        if (
+            isclass(attribute)
+            and issubclass(
+                attribute, featuretools.primitives.TransformPrimitive
+            )
+            and attribute.name
+        ):
+            transform_primitives.add(attribute)
     return {prim.name.lower(): prim for prim in transform_primitives}
 
 
@@ -94,7 +102,7 @@ def list_primitives():
 
 
 def get_default_aggregation_primitives():
-    agg_primitives = [
+    return [
         featuretools.primitives.Sum,
         featuretools.primitives.Std,
         featuretools.primitives.Max,
@@ -106,12 +114,10 @@ def get_default_aggregation_primitives():
         featuretools.primitives.NumUnique,
         featuretools.primitives.Mode,
     ]
-    return agg_primitives
 
 
 def get_default_transform_primitives():
-    # featuretools.primitives.TimeSince
-    trans_primitives = [
+    return [
         featuretools.primitives.Age,
         featuretools.primitives.Day,
         featuretools.primitives.Year,
@@ -121,7 +127,6 @@ def get_default_transform_primitives():
         featuretools.primitives.NumWords,
         featuretools.primitives.NumCharacters,
     ]
-    return trans_primitives
 
 
 def _get_descriptions(primitives):
@@ -161,12 +166,11 @@ def _get_unique_input_types(input_types):
 def list_primitive_files(directory):
     """returns list of files in directory that might contain primitives"""
     files = os.listdir(directory)
-    keep = []
-    for path in files:
-        if not check_valid_primitive_path(path):
-            continue
-        keep.append(os.path.join(directory, path))
-    return keep
+    return [
+        os.path.join(directory, path)
+        for path in files
+        if check_valid_primitive_path(path)
+    ]
 
 
 def check_valid_primitive_path(path):
@@ -175,10 +179,7 @@ def check_valid_primitive_path(path):
 
     filename = os.path.basename(path)
 
-    if filename[:2] == "__" or filename[0] == "." or filename[-3:] != ".py":
-        return False
-
-    return True
+    return filename[:2] != "__" and filename[0] != "." and filename[-3:] == ".py"
 
 
 def load_primitive_from_file(filepath):
@@ -199,17 +200,17 @@ def load_primitive_from_file(filepath):
         ):
             primitives.append((primitive_name, primitive_class))
 
-    if len(primitives) == 0:
-        raise RuntimeError("No primitive defined in file %s" % filepath)
+    if not primitives:
+        raise RuntimeError(f"No primitive defined in file {filepath}")
     elif len(primitives) > 1:
-        raise RuntimeError("More than one primitive defined in file %s" % filepath)
+        raise RuntimeError(f"More than one primitive defined in file {filepath}")
 
     return primitives[0]
 
 
 def serialize_primitive(primitive):
     """build a dictionary with the data necessary to construct the given primitive"""
-    args_dict = {name: val for name, val in primitive.get_arguments()}
+    args_dict = dict(primitive.get_arguments())
     cls = type(primitive)
     return {
         "type": cls.__name__,
@@ -247,8 +248,7 @@ class PrimitivesDeserializer(object):
 
             if not cls:
                 raise RuntimeError(
-                    'Primitive "%s" in module "%s" not found'
-                    % (class_name, module_name)
+                    f'Primitive "{class_name}" in module "{module_name}" not found'
                 )
 
         arguments = primitive_dict["arguments"]
@@ -442,11 +442,8 @@ def _haversine_calculate(lat_1s, lon_1s, lat_2s, lon_2s, unit):
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = np.sin(dlat / 2.0) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2.0) ** 2
-    radius_earth = 3958.7613
-    if unit == "kilometers":
-        radius_earth = 6371.0088
-    distances = radius_earth * 2 * np.arcsin(np.sqrt(a))
-    return distances
+    radius_earth = 6371.0088 if unit == "kilometers" else 3958.7613
+    return radius_earth * 2 * np.arcsin(np.sqrt(a))
 
 
 class HolidayUtil:

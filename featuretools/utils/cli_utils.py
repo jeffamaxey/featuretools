@@ -29,8 +29,8 @@ def show_info():
 
 
 def print_info():
-    print("Featuretools version: %s" % featuretools.__version__)
-    print("Featuretools installation directory: %s" % get_featuretools_root())
+    print(f"Featuretools version: {featuretools.__version__}")
+    print(f"Featuretools installation directory: {get_featuretools_root()}")
     print_sys_info()
     print_deps(deps)
 
@@ -48,11 +48,11 @@ def print_deps(dependencies):
     print("------------------")
     installed_packages = get_installed_packages()
 
-    package_dep = []
-    for x in dependencies:
-        # prevents uninstalled deps from being printed
-        if x in installed_packages:
-            package_dep.append((x, installed_packages[x]))
+    package_dep = [
+        (x, installed_packages[x])
+        for x in dependencies
+        if x in installed_packages
+    ]
     for k, stat in package_dep:
         print("{k}: {stat}".format(k=k, stat=stat))
 
@@ -87,10 +87,7 @@ def get_sys_info():
 
 
 def get_installed_packages():
-    installed_packages = {}
-    for d in pkg_resources.working_set:
-        installed_packages[d.project_name] = d.version
-    return installed_packages
+    return {d.project_name: d.version for d in pkg_resources.working_set}
 
 
 def get_featuretools_root():

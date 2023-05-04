@@ -126,9 +126,7 @@ def test_errors_unsupported_primitives(es):
     bad_agg_prim = NumUnique()
     bad_trans_prim.compatibility, bad_agg_prim.compatibility = [], []
     library = es.dataframe_type
-    error_text = "Selected primitives are incompatible with {} EntitySets: cum_sum, num_unique".format(
-        library
-    )
+    error_text = f"Selected primitives are incompatible with {library} EntitySets: cum_sum, num_unique"
     with pytest.raises(ValueError, match=error_text):
         DeepFeatureSynthesis(
             target_dataframe_name="sessions",
@@ -336,7 +334,7 @@ def test_only_makes_supplied_trans_feat(es):
         )
         > 0
     ]
-    assert len(other_trans_features) == 0
+    assert not other_trans_features
 
 
 def test_makes_dfeatures_of_agg_primitives(es):
@@ -568,12 +566,12 @@ def test_max_depth_single_table(transform_es):
         assert len(features) > 0
         if i != 0:
             # at least one depth 1 feature made
-            assert any([f.get_depth() == 1 for f in features])
+            assert any(f.get_depth() == 1 for f in features)
             # no depth 2 or higher even with max_depth=2
-            assert all([f.get_depth() <= 1 for f in features])
+            assert all(f.get_depth() <= 1 for f in features)
         else:
             # no depth 1 or higher features with max_depth=0
-            assert all([f.get_depth() == 0 for f in features])
+            assert all(f.get_depth() == 0 for f in features)
 
 
 def test_drop_contains(es):
@@ -809,29 +807,21 @@ def test_where_primitives(es):
         f for f in features if isinstance(f, AggregationFeature) and f.where is not None
     ]
 
-    assert len(where_feats_unconstrained) >= 1
+    assert where_feats_unconstrained
 
-    assert (
-        len([f for f in where_feats_unconstrained if isinstance(f.primitive, Sum)]) == 0
-    )
-    assert (
-        len([f for f in where_feats_unconstrained if isinstance(f.primitive, Count)])
-        > 0
-    )
+    assert not [
+        f for f in where_feats_unconstrained if isinstance(f.primitive, Sum)
+    ]
+    assert [f for f in where_feats_unconstrained if isinstance(f.primitive, Count)]
 
-    assert len([f for f in where_feats if isinstance(f.primitive, Sum)]) > 0
-    assert len([f for f in where_feats if isinstance(f.primitive, Count)]) == 0
-    assert (
-        len(
-            [
-                d
-                for f in where_feats
-                for d in f.get_dependencies(deep=True)
-                if isinstance(d.primitive, Absolute)
-            ]
-        )
-        > 0
-    )
+    assert [f for f in where_feats if isinstance(f.primitive, Sum)]
+    assert not [f for f in where_feats if isinstance(f.primitive, Count)]
+    assert [
+        d
+        for f in where_feats
+        for d in f.get_dependencies(deep=True)
+        if isinstance(d.primitive, Absolute)
+    ]
 
 
 def test_stacking_where_primitives(es):
@@ -869,14 +859,14 @@ def test_stacking_where_primitives(es):
         if isinstance(f, AggregationFeature) and f.where is not None
     ]
 
-    assert len(where_stack_1_feats) >= 1
-    assert len(where_stack_2_feats) >= 1
+    assert where_stack_1_feats
+    assert where_stack_2_feats
 
-    assert len([f for f in where_stack_1_feats if isinstance(f.primitive, Last)]) > 0
-    assert len([f for f in where_stack_1_feats if isinstance(f.primitive, Count)]) > 0
+    assert [f for f in where_stack_1_feats if isinstance(f.primitive, Last)]
+    assert [f for f in where_stack_1_feats if isinstance(f.primitive, Count)]
 
-    assert len([f for f in where_stack_2_feats if isinstance(f.primitive, Last)]) > 0
-    assert len([f for f in where_stack_2_feats if isinstance(f.primitive, Count)]) > 0
+    assert [f for f in where_stack_2_feats if isinstance(f.primitive, Last)]
+    assert [f for f in where_stack_2_feats if isinstance(f.primitive, Count)]
 
     stacked_where_limit_1_feats = []
     stacked_where_limit_2_feats = []
@@ -893,8 +883,8 @@ def test_stacking_where_primitives(es):
                 ):
                     double_where_list.append(feature)
 
-    assert len(stacked_where_limit_1_feats) == 0
-    assert len(stacked_where_limit_2_feats) > 0
+    assert not stacked_where_limit_1_feats
+    assert stacked_where_limit_2_feats
 
 
 def test_where_different_base_feats(es):
@@ -1074,21 +1064,21 @@ def test_return_types(es):
     f3_types = [f.column_schema for f in f3]
     f4_types = [f.column_schema for f in f4]
 
-    assert any([is_valid_input(schema, discrete) for schema in f1_types])
-    assert any([is_valid_input(schema, numeric) for schema in f1_types])
-    assert not any([is_valid_input(schema, datetime) for schema in f1_types])
+    assert any(is_valid_input(schema, discrete) for schema in f1_types)
+    assert any(is_valid_input(schema, numeric) for schema in f1_types)
+    assert not any(is_valid_input(schema, datetime) for schema in f1_types)
 
-    assert any([is_valid_input(schema, discrete) for schema in f2_types])
-    assert not any([is_valid_input(schema, numeric) for schema in f2_types])
-    assert not any([is_valid_input(schema, datetime) for schema in f2_types])
+    assert any(is_valid_input(schema, discrete) for schema in f2_types)
+    assert not any(is_valid_input(schema, numeric) for schema in f2_types)
+    assert not any(is_valid_input(schema, datetime) for schema in f2_types)
 
-    assert any([is_valid_input(schema, discrete) for schema in f3_types])
-    assert any([is_valid_input(schema, numeric) for schema in f3_types])
-    assert any([is_valid_input(schema, datetime) for schema in f3_types])
+    assert any(is_valid_input(schema, discrete) for schema in f3_types)
+    assert any(is_valid_input(schema, numeric) for schema in f3_types)
+    assert any(is_valid_input(schema, datetime) for schema in f3_types)
 
-    assert not any([is_valid_input(schema, discrete) for schema in f4_types])
-    assert not any([is_valid_input(schema, numeric) for schema in f4_types])
-    assert any([is_valid_input(schema, datetime) for schema in f4_types])
+    assert not any(is_valid_input(schema, discrete) for schema in f4_types)
+    assert not any(is_valid_input(schema, numeric) for schema in f4_types)
+    assert any(is_valid_input(schema, datetime) for schema in f4_types)
 
 
 def test_checks_primitives_correct_type(es):
@@ -1146,11 +1136,7 @@ def test_makes_direct_features_through_multiple_relationships(games_es):
     for forward in teams:
         for backward in teams:
             for col in teams:
-                f = "teams[%s_team_id].MEAN(games[%s_team_id].%s_team_score)" % (
-                    forward,
-                    backward,
-                    col,
-                )
+                f = f"teams[{forward}_team_id].MEAN(games[{backward}_team_id].{col}_team_score)"
                 assert feature_with_name(features, f)
 
 
@@ -1394,7 +1380,7 @@ def test_primitive_options(es):
                 if identity_base.dataframe_name == "customers":
                     assert identity_base.get_name() == "age"
         if isinstance(f.primitive, Mean):
-            assert all([df_name in ["customers"] for df_name in df_names])
+            assert all(df_name in ["customers"] for df_name in df_names)
         if isinstance(f.primitive, Mode):
             assert "sessions" not in df_names
         if isinstance(f.primitive, NumUnique):
@@ -1418,7 +1404,7 @@ def test_primitive_options(es):
         primitive_options=options,
     )
     features = dfs_obj.build_features()
-    assert not any([isinstance(f, NumCharacters) for f in features])
+    assert not any(isinstance(f, NumCharacters) for f in features)
     for f in features:
         deps = f.get_dependencies(deep=True)
         df_names = [d.dataframe_name for d in deps]
@@ -1432,12 +1418,9 @@ def test_primitive_options(es):
         if isinstance(f.primitive, Day):
             for identity_base in columns:
                 if identity_base.dataframe_name == "customers":
-                    assert (
-                        identity_base.get_name() == "signup_date"
-                        or identity_base.get_name() == "upgrade_date"
-                    )
+                    assert identity_base.get_name() in ["signup_date", "upgrade_date"]
         if isinstance(f.primitive, Year):
-            assert all([df_name in ["customers"] for df_name in df_names])
+            assert all(df_name in ["customers"] for df_name in df_names)
 
 
 def test_primitive_options_with_globals(es):
@@ -1510,21 +1493,17 @@ def test_primitive_options_with_globals(es):
         df_names = [d.dataframe_name for d in deps]
         columns = [d for d in deps if isinstance(d, IdentityFeature)]
         if isinstance(f.primitive, Mode):
-            assert [all([df_name in ["sessions", "customers"] for df_name in df_names])]
+            assert [all(df_name in ["sessions", "customers"] for df_name in df_names)]
             for identity_base in columns:
                 assert not (
                     identity_base.dataframe_name == "customers"
-                    and (
-                        identity_base.get_name() == "age"
-                        or identity_base.get_name() == "région_id"
-                    )
+                    and identity_base.get_name() in ["age", "région_id"]
                 )
         elif isinstance(f.primitive, NumUnique):
-            assert [all([df_name in ["sessions", "customers"] for df_name in df_names])]
+            assert [all(df_name in ["sessions", "customers"] for df_name in df_names)]
             for identity_base in columns:
                 if identity_base.dataframe_name == "sessions":
                     assert identity_base.get_name() == "device_type"
-        # All other primitives ignore 'sessions' and 'age'
         else:
             assert "sessions" not in df_names
             for identity_base in columns:
@@ -1576,16 +1555,13 @@ def test_primitive_options_groupbys(pd_es):
                     and identity_groupby.get_name() == "session_id"
                 )
         if isinstance(f.primitive, CumCount):
-            assert all([name in ["log", "customers"] for name in df_names])
+            assert all(name in ["log", "customers"] for name in df_names)
         if isinstance(f.primitive, CumSum):
             assert "sessions" not in df_names
         if isinstance(f.primitive, CumMin):
             for identity_groupby in columns:
                 if identity_groupby.dataframe_name == "sessions":
-                    assert (
-                        identity_groupby.get_name() == "customer_id"
-                        or identity_groupby.get_name() == "device_type"
-                    )
+                    assert identity_groupby.get_name() in ["customer_id", "device_type"]
 
 
 def test_primitive_options_multiple_inputs(es):
@@ -1643,7 +1619,7 @@ def test_primitive_options_multiple_inputs(es):
         df_names = [d.dataframe_name for d in deps]
         columns = [d.get_name() for d in deps]
         if f.primitive.name == "trend":
-            assert all([df_name in ["log"] for df_name in df_names])
+            assert all(df_name in ["log"] for df_name in df_names)
             assert "datetime" in columns
             if len(columns) == 2:
                 assert "value" != columns[0]
@@ -1741,6 +1717,9 @@ def test_primitive_options_instantiated_primitive(es):
 
 
 def test_primitive_options_commutative(es):
+
+
+
     class AddThree(TransformPrimitive):
         name = "add_three"
         input_types = [
@@ -1753,11 +1732,8 @@ def test_primitive_options_commutative(es):
         compatibility = [Library.PANDAS, Library.DASK, Library.SPARK]
 
         def generate_name(self, base_feature_names):
-            return "%s + %s + %s" % (
-                base_feature_names[0],
-                base_feature_names[1],
-                base_feature_names[2],
-            )
+            return f"{base_feature_names[0]} + {base_feature_names[1]} + {base_feature_names[2]}"
+
 
     options = {
         "add_numeric": [

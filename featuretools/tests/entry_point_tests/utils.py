@@ -35,7 +35,7 @@ def _import_featuretools(level=None):
     c = ""
     if level:
         c += "import os;"
-        c += 'os.environ["FEATURETOOLS_LOG_LEVEL"] = "%s";' % level
+        c += f'os.environ["FEATURETOOLS_LOG_LEVEL"] = "{level}";'
 
     c += "import featuretools;"
     return _python("-c", c)

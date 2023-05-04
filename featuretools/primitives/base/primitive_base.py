@@ -75,31 +75,28 @@ class PrimitiveBase(object):
         strings = []
         for name, value in self.get_arguments():
             # format arg to string
-            string = "{}={}".format(name, str(value))
+            string = f"{name}={str(value)}"
             strings.append(string)
 
-        if len(strings) == 0:
+        if not strings:
             return ""
 
         string = ", ".join(strings)
-        string = ", " + string
-        return string
+        return f", {string}"
 
     def get_arguments(self):
         values = []
 
         args = signature(self.__class__).parameters.items()
+        # assert that arg is attribute of primitive
+        error = '"{}" must be attribute of {}'
         for name, arg in args:
-            # assert that arg is attribute of primitive
-            error = '"{}" must be attribute of {}'
             assert hasattr(self, name), error.format(name, self.__class__.__name__)
 
             value = getattr(self, name)
             # check if args are the same type
-            if isinstance(value, type(arg.default)):
-                # skip if default value
-                if arg.default == value:
-                    continue
+            if isinstance(value, type(arg.default)) and arg.default == value:
+                continue
 
             values.append((name, value))
 
@@ -108,8 +105,7 @@ class PrimitiveBase(object):
     def get_description(
         self, input_column_descriptions, slice_num=None, template_override=None
     ):
-        template = template_override or self.description_template
-        if template:
+        if template := template_override or self.description_template:
             if isinstance(template, list):
                 if slice_num is not None:
                     slice_index = slice_num + 1
@@ -118,26 +114,19 @@ class PrimitiveBase(object):
                             *input_column_descriptions,
                             nth_slice=convert_to_nth(slice_index),
                         )
-                    else:
-                        if len(template) > 2:
-                            raise IndexError("Slice out of range of template")
-                        return template[1].format(
-                            *input_column_descriptions,
-                            nth_slice=convert_to_nth(slice_index),
-                        )
+                    if len(template) > 2:
+                        raise IndexError("Slice out of range of template")
+                    return template[1].format(
+                        *input_column_descriptions,
+                        nth_slice=convert_to_nth(slice_index),
+                    )
                 else:
                     template = template[0]
             return template.format(*input_column_descriptions)
 
         # generic case:
         name = self.name.upper() if self.name is not None else type(self).__name__
-        if slice_num is not None:
-            nth_slice = convert_to_nth(slice_num + 1)
-            description = "the {} output from applying {} to {}".format(
-                nth_slice, name, ", ".join(input_column_descriptions)
-            )
-        else:
-            description = "the result of applying {} to {}".format(
-                name, ", ".join(input_column_descriptions)
-            )
-        return description
+        if slice_num is None:
+            return f'the result of applying {name} to {", ".join(input_column_descriptions)}'
+        nth_slice = convert_to_nth(slice_num + 1)
+        return f'the {nth_slice} output from applying {name} to {", ".join(input_column_descriptions)}'

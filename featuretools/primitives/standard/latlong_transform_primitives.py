@@ -133,10 +133,7 @@ class Haversine(TransformPrimitive):
     def __init__(self, unit="miles"):
         valid_units = ["miles", "kilometers"]
         if unit not in valid_units:
-            error_message = "Invalid unit %s provided. Must be one of %s" % (
-                unit,
-                valid_units,
-            )
+            error_message = f"Invalid unit {unit} provided. Must be one of {valid_units}"
             raise ValueError(error_message)
         self.unit = unit
         self.description_template = (
@@ -158,10 +155,10 @@ class Haversine(TransformPrimitive):
         return haversine
 
     def generate_name(self, base_feature_names):
-        name = "{}(".format(self.name.upper())
+        name = f"{self.name.upper()}("
         name += ", ".join(base_feature_names)
         if self.unit != "miles":
-            name += ", unit={}".format(self.unit)
+            name += f", unit={self.unit}"
         name += ")"
         return name
 

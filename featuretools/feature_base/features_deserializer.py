@@ -82,22 +82,22 @@ class FeaturesDeserializer(object):
 
     @classmethod
     def load(cls, features, profile_name):
-        if isinstance(features, str):
-            try:
-                features_dict = json.loads(features)
-            except ValueError:
-                if _is_url(features) or _is_s3(features):
-                    transport_params = None
-                    if _is_s3(features):
-                        transport_params = get_transport_params(profile_name)
-                    features_dict = use_smartopen_features(
-                        features, transport_params=transport_params
-                    )
-                else:
-                    with open(features, "r") as f:
-                        features_dict = json.load(f)
-            return cls(features_dict)
-        return cls(json.load(features))
+        if not isinstance(features, str):
+            return cls(json.load(features))
+        try:
+            features_dict = json.loads(features)
+        except ValueError:
+            if _is_url(features) or _is_s3(features):
+                transport_params = None
+                if _is_s3(features):
+                    transport_params = get_transport_params(profile_name)
+                features_dict = use_smartopen_features(
+                    features, transport_params=transport_params
+                )
+            else:
+                with open(features, "r") as f:
+                    features_dict = json.load(f)
+        return cls(features_dict)
 
     def to_list(self):
         feature_names = self.features_dict["feature_list"]
@@ -119,7 +119,7 @@ class FeaturesDeserializer(object):
         type = feature_dict["type"]
         cls = self.FEATURE_CLASSES.get(type)
         if not cls:
-            raise RuntimeError('Unrecognized feature type "%s"' % type)
+            raise RuntimeError(f'Unrecognized feature type "{type}"')
 
         args = feature_dict["arguments"]
         feature = cls.from_dictionary(

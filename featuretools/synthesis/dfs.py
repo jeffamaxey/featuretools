@@ -306,16 +306,11 @@ def warn_unused_primitives(unused_primitives):
         "  groupby_trans_primitives: {}\n",
         "  where_primitives: {}\n",
     ]
-    unused_string = ""
-    for primitives, message in zip(unused_primitives, messages):
-        if primitives:
-            unused_string += message.format(primitives)
-
-    warning_msg = (
-        "Some specified primitives were not used during DFS:\n{}".format(unused_string)
-        + "This may be caused by a using a value of max_depth that is too small, not setting interesting values, "
-        + "or it may indicate no compatible columns for the primitive were found in the data. If the DFS call "
-        + "contained multiple instances of a primitive in the list above, none of them were used."
+    unused_string = "".join(
+        message.format(primitives)
+        for primitives, message in zip(unused_primitives, messages)
+        if primitives
     )
+    warning_msg = f"Some specified primitives were not used during DFS:\n{unused_string}This may be caused by a using a value of max_depth that is too small, not setting interesting values, or it may indicate no compatible columns for the primitive were found in the data. If the DFS call contained multiple instances of a primitive in the list above, none of them were used."
 
     warnings.warn(warning_msg, UnusedPrimitiveWarning)

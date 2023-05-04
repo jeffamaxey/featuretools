@@ -10,11 +10,12 @@ def _get_ipython_notebooks(docs_source):
     directories_to_skip = ["_templates", "generated", ".ipynb_checkpoints"]
     notebooks = []
     for root, _, filenames in os.walk(docs_source):
-        if any(dir_ in root for dir_ in directories_to_skip):
-            continue
-        for filename in filenames:
-            if filename.endswith(".ipynb"):
-                notebooks.append(os.path.join(root, filename))
+        if all(dir_ not in root for dir_ in directories_to_skip):
+            notebooks.extend(
+                os.path.join(root, filename)
+                for filename in filenames
+                if filename.endswith(".ipynb")
+            )
     return notebooks
 
 
@@ -38,18 +39,17 @@ def _check_delete_empty_cell(notebook, delete=True):
 def _check_execution_and_output(notebook):
     with open(notebook, "r") as f:
         source = json.load(f)
-    for cells in source["cells"]:
-        if cells["cell_type"] == "code" and (cells["execution_count"] is not None or cells['outputs']!= []):
-            return False
-    return True
+    return not any(
+        cells["cell_type"] == "code"
+        and (cells["execution_count"] is not None or cells['outputs'] != [])
+        for cells in source["cells"]
+    )
 
 
 def _check_python_version(notebook, default_version):
     with open(notebook, "r") as f:
         source = json.load(f)
-    if source["metadata"]["language_info"]["version"] != default_version:
-        return False
-    return True
+    return source["metadata"]["language_info"]["version"] == default_version
 
 
 def _fix_python_version(notebook, default_version):

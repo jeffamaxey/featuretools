@@ -118,7 +118,7 @@ class EntitySet(object):
         _ES_REF[self.id] = self
 
     def __sizeof__(self):
-        return sum([df.__sizeof__() for df in self.dataframes])
+        return sum(df.__sizeof__() for df in self.dataframes)
 
     def __dask_tokenize__(self):
         return (EntitySet, serialize.entityset_to_description(self.metadata))
@@ -135,12 +135,11 @@ class EntitySet(object):
                 return False
             if not df.ww.__eq__(other[df_name].ww, deep=deep):
                 return False
-        if not len(self.relationships) == len(other.relationships):
-            return False
-        for r in self.relationships:
-            if r not in other.relationships:
-                return False
-        return True
+        return (
+            all(r in other.relationships for r in self.relationships)
+            if len(self.relationships) == len(other.relationships)
+            else False
+        )
 
     def __ne__(self, other, deep=False):
         return not self.__eq__(other, deep=deep)
@@ -158,7 +157,7 @@ class EntitySet(object):
         if dataframe_name in self.dataframe_dict:
             return self.dataframe_dict[dataframe_name]
         name = self.id or "entity set"
-        raise KeyError("DataFrame %s does not exist in %s" % (dataframe_name, name))
+        raise KeyError(f"DataFrame {dataframe_name} does not exist in {name}")
 
     def __deepcopy__(self, memo):
         cls = self.__class__
@@ -294,15 +293,12 @@ class EntitySet(object):
     ###########################################################################
 
     def __repr__(self):
-        repr_out = "Entityset: {}\n".format(self.id)
-        repr_out += "  DataFrames:"
+        repr_out = f"Entityset: {self.id}\n  DataFrames:"
         for df in self.dataframes:
             if df.shape:
-                repr_out += "\n    {} [Rows: {}, Columns: {}]".format(
-                    df.ww.name, df.shape[0], df.shape[1]
-                )
+                repr_out += f"\n    {df.ww.name} [Rows: {df.shape[0]}, Columns: {df.shape[1]}]"
             else:
-                repr_out += "\n    {} [Rows: None, Columns: None]".format(df.ww.name)
+                repr_out += f"\n    {df.ww.name} [Rows: None, Columns: None]"
         repr_out += "\n  Relationships:"
 
         if len(self.relationships) == 0:
@@ -374,7 +370,7 @@ class EntitySet(object):
                 child_column_name,
             )
         if relationship in self.relationships:
-            warnings.warn("Not adding duplicate relationship: " + str(relationship))
+            warnings.warn(f"Not adding duplicate relationship: {str(relationship)}")
             return self
 
         # _operations?
@@ -669,22 +665,18 @@ class EntitySet(object):
         logical_types = logical_types or {}
         semantic_tags = semantic_tags or {}
 
-        if len(self.dataframes) > 0:
-            if not isinstance(dataframe, type(self.dataframes[0])):
-                raise ValueError(
-                    "All dataframes must be of the same type. "
-                    "Cannot add dataframe of type {} to an entityset with existing dataframes "
-                    "of type {}".format(type(dataframe), type(self.dataframes[0]))
-                )
-
-        # Only allow string column names
-        non_string_names = [
-            name for name in dataframe.columns if not isinstance(name, str)
-        ]
-        if non_string_names:
+        if len(self.dataframes) > 0 and not isinstance(
+            dataframe, type(self.dataframes[0])
+        ):
             raise ValueError(
-                "All column names must be strings (Columns {} "
-                "are not strings)".format(non_string_names)
+                f"All dataframes must be of the same type. Cannot add dataframe of type {type(dataframe)} to an entityset with existing dataframes of type {type(self.dataframes[0])}"
+            )
+
+        if non_string_names := [
+            name for name in dataframe.columns if not isinstance(name, str)
+        ]:
+            raise ValueError(
+                f"All column names must be strings (Columns {non_string_names} are not strings)"
             )
 
         if dataframe.ww.schema is None:
@@ -824,9 +816,7 @@ class EntitySet(object):
         }.items():
             if not isinstance(col_list, list):
                 raise TypeError(
-                    "'{}' must be a list, but received type {}".format(
-                        list_name, type(col_list)
-                    )
+                    f"'{list_name}' must be a list, but received type {type(col_list)}"
                 )
             if len(col_list) != len(set(col_list)):
                 raise ValueError(
@@ -835,17 +825,13 @@ class EntitySet(object):
             for col_name in col_list:
                 if col_name == index:
                     raise ValueError(
-                        "Not adding {} as both index and column in {}".format(
-                            col_name, list_name
-                        )
+                        f"Not adding {col_name} as both index and column in {list_name}"
                     )
 
         for col in additional_columns:
             if col == base_dataframe.ww.time_index:
                 raise ValueError(
-                    "Not moving {} as it is the base time index column. Perhaps, move the column to the copy_columns.".format(
-                        col
-                    )
+                    f"Not moving {col} as it is the base time index column. Perhaps, move the column to the copy_columns."
                 )
 
         if isinstance(make_time_index, str):
@@ -862,14 +848,14 @@ class EntitySet(object):
                 "'index' must be different from the index column of the base dataframe"
             )
 
-        transfer_types = {}
-        # Types will be a tuple of (logical_type, semantic_tags, column_metadata, column_description)
-        transfer_types[index] = (
-            base_dataframe.ww.logical_types[index],
-            base_dataframe.ww.semantic_tags[index],
-            base_dataframe.ww.columns[index].metadata,
-            base_dataframe.ww.columns[index].description,
-        )
+        transfer_types = {
+            index: (
+                base_dataframe.ww.logical_types[index],
+                base_dataframe.ww.semantic_tags[index],
+                base_dataframe.ww.columns[index].metadata,
+                base_dataframe.ww.columns[index].description,
+            )
+        }
         for col_name in additional_columns + copy_columns:
             # Remove any existing time index tags
             transfer_types[col_name] = (
@@ -894,7 +880,7 @@ class EntitySet(object):
             # Create a new time index based on the base dataframe time index.
             base_time_index = base_dataframe.ww.time_index
             if new_dataframe_time_index is None:
-                new_dataframe_time_index = "first_%s_time" % (base_dataframe.ww.name)
+                new_dataframe_time_index = f"first_{base_dataframe.ww.name}_time"
 
             already_sorted = True
 
@@ -902,7 +888,7 @@ class EntitySet(object):
                 base_dataframe.ww.time_index is not None
             ), "Base dataframe doesn't have time_index defined"
 
-            if base_time_index not in [col for col in copy_columns]:
+            if base_time_index not in list(copy_columns):
                 copy_columns.append(base_time_index)
 
                 time_index_types = (
@@ -925,15 +911,10 @@ class EntitySet(object):
 
         if new_dataframe_time_index is not None and new_dataframe_time_index == index:
             raise ValueError(
-                "time_index and index cannot be the same value, %s"
-                % (new_dataframe_time_index)
+                f"time_index and index cannot be the same value, {new_dataframe_time_index}"
             )
 
-        selected_columns = (
-            [index]
-            + [col for col in additional_columns]
-            + [col for col in copy_columns]
-        )
+        selected_columns = ([index] + list(additional_columns)) + list(copy_columns)
 
         new_dataframe = new_dataframe.dropna(subset=[index])
         new_dataframe2 = new_dataframe.drop_duplicates(index, keep="first")[
@@ -1033,11 +1014,7 @@ class EntitySet(object):
                 ", and column names"
             )
 
-        if inplace:
-            combined_es = self
-        else:
-            combined_es = copy.deepcopy(self)
-
+        combined_es = self if inplace else copy.deepcopy(self)
         lib = pd
         if self.dataframe_type == Library.SPARK.value:
             lib = ps

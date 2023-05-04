@@ -65,16 +65,14 @@ def test_delta_with_time_unit_matches_pandas(es):
 def test_check_timedelta(es):
     time_units = list(Timedelta._readable_units.keys())
     expanded_units = list(Timedelta._readable_units.values())
-    exp_to_standard_unit = {e: t for e, t in zip(expanded_units, time_units)}
+    exp_to_standard_unit = dict(zip(expanded_units, time_units))
     singular_units = [u[:-1] for u in expanded_units]
-    sing_to_standard_unit = {s: t for s, t in zip(singular_units, time_units)}
-    to_standard_unit = {}
-    to_standard_unit.update(exp_to_standard_unit)
-    to_standard_unit.update(sing_to_standard_unit)
+    sing_to_standard_unit = dict(zip(singular_units, time_units))
+    to_standard_unit = exp_to_standard_unit | sing_to_standard_unit
     full_units = singular_units + expanded_units + time_units + time_units
 
-    strings = ["2 {}".format(u) for u in singular_units + expanded_units + time_units]
-    strings += ["2{}".format(u) for u in time_units]
+    strings = [f"2 {u}" for u in singular_units + expanded_units + time_units]
+    strings += [f"2{u}" for u in time_units]
     for i, s in enumerate(strings):
         unit = full_units[i]
         standard_unit = unit

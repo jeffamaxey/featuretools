@@ -102,7 +102,7 @@ def test_encode_features_handles_pass_columns(pd_es):
     cutoff_time = pd.DataFrame(
         {
             "instance_id": range(6),
-            "time": pd_es["log"]["datetime"][0:6],
+            "time": pd_es["log"]["datetime"][:6],
             "label": [i % 2 for i in range(6)],
         },
         columns=["instance_id", "time", "label"],
@@ -139,7 +139,7 @@ def test_encode_features_catches_features_mismatch(pd_es):
     cutoff_time = pd.DataFrame(
         {
             "instance_id": range(6),
-            "time": pd_es["log"]["datetime"][0:6],
+            "time": pd_es["log"]["datetime"][:6],
             "label": [i % 2 for i in range(6)],
         },
         columns=["instance_id", "time", "label"],

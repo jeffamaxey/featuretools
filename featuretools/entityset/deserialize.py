@@ -121,7 +121,7 @@ def read_data_description(path):
     """
 
     path = os.path.abspath(path)
-    assert os.path.exists(path), '"{}" does not exist'.format(path)
+    assert os.path.exists(path), f'"{path}" does not exist'
     filepath = os.path.join(path, "data_description.json")
     with open(filepath, "r") as file:
         description = json.load(file)
@@ -141,11 +141,7 @@ def read_entityset(path, profile_name=None, **kwargs):
     if _is_url(path) or _is_s3(path) or _is_local_tar(str(path)):
         with tempfile.TemporaryDirectory() as tmpdir:
             local_path = path
-            transport_params = None
-
-            if _is_s3(path):
-                transport_params = get_transport_params(profile_name)
-
+            transport_params = get_transport_params(profile_name) if _is_s3(path) else None
             if _is_s3(path) or _is_url(path):
                 local_path = os.path.join(tmpdir, "temporary_es")
                 use_smartopen_es(local_path, path, transport_params)

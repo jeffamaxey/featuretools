@@ -34,7 +34,7 @@ def make_temporal_cutoffs(
         _window_size = window_size
         _start = None
         if start is not None:
-            if window_size is None:
+            if _window_size is None:
                 _window_size = (time - start[i]) / (num_windows - 1)
             else:
                 _start = start[i]

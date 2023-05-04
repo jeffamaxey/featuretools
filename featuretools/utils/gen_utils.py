@@ -12,10 +12,8 @@ logger = logging.getLogger("featuretools.utils")
 
 
 def make_tqdm_iterator(**kwargs):
-    options = {"file": sys.stdout, "leave": True}
-    options.update(kwargs)
-    iterator = tqdm(**options)
-    return iterator
+    options = {"file": sys.stdout, "leave": True} | kwargs
+    return tqdm(**options)
 
 
 def get_relationship_column_id(path):
@@ -23,7 +21,7 @@ def get_relationship_column_id(path):
     child_link_name = r._child_column_name
     for _, r in path[1:]:
         parent_link_name = child_link_name
-        child_link_name = "%s.%s" % (r.parent_name, parent_link_name)
+        child_link_name = f"{r.parent_name}.{parent_link_name}"
     return child_link_name
 
 
@@ -37,46 +35,46 @@ def find_descendents(cls):
     """
     yield cls
     for sub in cls.__subclasses__():
-        for c in find_descendents(sub):
-            yield c
+        yield from find_descendents(sub)
 
 
 def check_schema_version(cls, cls_type):
-    if isinstance(cls_type, str):
-        if cls_type == "entityset":
-            from featuretools.entityset.serialize import SCHEMA_VERSION
+    if not isinstance(cls_type, str):
+        return
+    if cls_type == "entityset":
+        from featuretools.entityset.serialize import SCHEMA_VERSION
 
-            version_string = cls.get("schema_version")
-        elif cls_type == "features":
-            from featuretools.feature_base.features_serializer import SCHEMA_VERSION
+        version_string = cls.get("schema_version")
+    elif cls_type == "features":
+        from featuretools.feature_base.features_serializer import SCHEMA_VERSION
 
-            version_string = cls.features_dict["schema_version"]
+        version_string = cls.features_dict["schema_version"]
 
-        current = SCHEMA_VERSION.split(".")
-        saved = version_string.split(".")
+    current = SCHEMA_VERSION.split(".")
+    saved = version_string.split(".")
 
-        warning_text_upgrade = (
-            "The schema version of the saved %s"
-            "(%s) is greater than the latest supported (%s). "
-            "You may need to upgrade featuretools. Attempting to load %s ..."
-            % (cls_type, version_string, SCHEMA_VERSION, cls_type)
-        )
-        for c_num, s_num in zip_longest(current, saved, fillvalue=0):
-            if c_num > s_num:
-                break
-            elif c_num < s_num:
-                warnings.warn(warning_text_upgrade)
-                break
+    warning_text_upgrade = (
+        "The schema version of the saved %s"
+        "(%s) is greater than the latest supported (%s). "
+        "You may need to upgrade featuretools. Attempting to load %s ..."
+        % (cls_type, version_string, SCHEMA_VERSION, cls_type)
+    )
+    for c_num, s_num in zip_longest(current, saved, fillvalue=0):
+        if c_num > s_num:
+            break
+        elif c_num < s_num:
+            warnings.warn(warning_text_upgrade)
+            break
 
-        warning_text_outdated = (
-            "The schema version of the saved %s"
-            "(%s) is no longer supported by this version "
-            "of featuretools. Attempting to load %s ..."
-            % (cls_type, version_string, cls_type)
-        )
-        # Check if saved has older major version.
-        if current[0] > saved[0]:
-            logger.warning(warning_text_outdated)
+    warning_text_outdated = (
+        "The schema version of the saved %s"
+        "(%s) is no longer supported by this version "
+        "of featuretools. Attempting to load %s ..."
+        % (cls_type, version_string, cls_type)
+    )
+    # Check if saved has older major version.
+    if current[0] > saved[0]:
+        logger.warning(warning_text_outdated)
 
 
 def import_or_raise(library, error_msg):

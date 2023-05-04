@@ -59,7 +59,7 @@ def test_get_dependencies(es):
     d1 = ft.Feature(agg2, "sessions")
     shallow = d1.get_dependencies(deep=False, ignored=None)
     deep = d1.get_dependencies(deep=True, ignored=None)
-    ignored = set([agg1.unique_name()])
+    ignored = {agg1.unique_name()}
     deep_ignored = d1.get_dependencies(deep=True, ignored=ignored)
     assert [s.unique_name() for s in shallow] == [agg2.unique_name()]
     assert [d.unique_name() for d in deep] == [

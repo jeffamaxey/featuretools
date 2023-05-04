@@ -73,21 +73,20 @@ class Trie(object):
             >>> sub.get_node([4]).value
             '124'
         """
-        if path:
-            first = path[0]
-            rest = path[1:]
-
-            if first in self._children:
-                sub_trie = self._children[first]
-            else:
-                sub_trie = Trie(
-                    default=self._default, path_constructor=self._path_constructor
-                )
-                self._children[first] = sub_trie
-
-            return sub_trie.get_node(rest)
-        else:
+        if not path:
             return self
+        first = path[0]
+        rest = path[1:]
+
+        if first in self._children:
+            sub_trie = self._children[first]
+        else:
+            sub_trie = Trie(
+                default=self._default, path_constructor=self._path_constructor
+            )
+            self._children[first] = sub_trie
+
+        return sub_trie.get_node(rest)
 
     def __iter__(self):
         """

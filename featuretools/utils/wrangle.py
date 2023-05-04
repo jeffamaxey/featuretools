@@ -35,7 +35,7 @@ def _check_timedelta(td):
     if isinstance(td, Timedelta):
         return td
     elif not isinstance(td, (int, float, str, pd.DateOffset, pd.Timedelta)):
-        raise ValueError("Unable to parse timedelta: {}".format(td))
+        raise ValueError(f"Unable to parse timedelta: {td}")
     if isinstance(td, pd.Timedelta):
         unit = "s"
         value = td.total_seconds()
@@ -44,18 +44,11 @@ def _check_timedelta(td):
     elif isinstance(td, pd.DateOffset):
         # DateOffsets
         if td.__class__.__name__ != "DateOffset":
-            if hasattr(td, "__dict__"):
-                # Special offsets (such as BDay) - prior to pandas 1.0.0
-                value = td.__dict__["n"]
-            else:
-                # Special offsets (such as BDay) - after pandas 1.0.0
-                value = td.n
+            value = td.__dict__["n"] if hasattr(td, "__dict__") else td.n
             unit = td.__class__.__name__
             times = dict([(unit, value)])
         else:
-            times = dict()
-            for td_unit, td_value in td.kwds.items():
-                times[td_unit] = td_value
+            times = dict(td.kwds.items())
         return Timedelta(times, delta_obj=td)
     else:
         pattern = "([0-9]+) *([a-zA-Z]+)$"
@@ -68,8 +61,10 @@ def _check_timedelta(td):
                 value = float(value)
             except Exception:
                 raise ValueError(
-                    "Unable to parse value {} from ".format(value)
-                    + "timedelta string: {}".format(td)
+                    (
+                        f"Unable to parse value {value} from "
+                        + f"timedelta string: {td}"
+                    )
                 )
         times = {unit: value}
         return Timedelta(times)
