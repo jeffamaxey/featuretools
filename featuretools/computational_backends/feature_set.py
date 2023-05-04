@@ -58,8 +58,10 @@ class FeatureSet(object):
 
         # feature names (keys) and the features that rely on them (values).
         self.feature_dependents = {
-            fname: [self.features_by_name[dname] for dname in feature_dependents[fname]]
-            for fname, f in self.features_by_name.items()
+            fname: [
+                self.features_by_name[dname] for dname in feature_dependents[fname]
+            ]
+            for fname in self.features_by_name
         }
 
         self._feature_trie = None
@@ -214,10 +216,10 @@ class FeatureSet(object):
         return check_dependents and self._dependent_uses_full_dataframe(feature)
 
     def _dependent_uses_full_dataframe(self, feature):
-        for d in self.feature_dependents[feature.unique_name()]:
-            if isinstance(d, TransformFeature) and d.primitive.uses_full_dataframe:
-                return True
-        return False
+        return any(
+            isinstance(d, TransformFeature) and d.primitive.uses_full_dataframe
+            for d in self.feature_dependents[feature.unique_name()]
+        )
 
 
 # These functions are used for sorting and grouping features
@@ -226,15 +228,12 @@ class FeatureSet(object):
 def _get_use_previous(
     f,
 ):  # TODO Sort and group features for DateOffset with two different temporal values
-    if isinstance(f, AggregationFeature) and f.use_previous is not None:
-        if len(f.use_previous.times.keys()) > 1:
-            return ("", -1)
-        else:
-            unit = list(f.use_previous.times.keys())[0]
-            value = f.use_previous.times[unit]
-            return (unit, value)
-    else:
+    if not isinstance(f, AggregationFeature) or f.use_previous is None:
         return ("", -1)
+    if len(f.use_previous.times.keys()) > 1:
+        return ("", -1)
+    unit = list(f.use_previous.times.keys())[0]
+    return unit, f.use_previous.times[unit]
 
 
 def _get_where(f):

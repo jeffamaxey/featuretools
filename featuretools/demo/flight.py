@@ -61,9 +61,7 @@ def load_flight(
     filename, csv_length = get_flight_filename(demo=demo)
 
     print("Downloading data ...")
-    url = "https://api.featurelabs.com/datasets/{}?library=featuretools&version={}".format(
-        filename, ft.__version__
-    )
+    url = f"https://api.featurelabs.com/datasets/{filename}?library=featuretools&version={ft.__version__}"
 
     chunksize = math.ceil(csv_length / 99)
     pd.options.display.max_columns = 200
@@ -83,12 +81,7 @@ def load_flight(
         partial_df_list.append(df)
     data = pd.concat(partial_df_list)
 
-    if return_single_table:
-        return data
-
-    es = make_es(data)
-
-    return es
+    return data if return_single_table else make_es(data)
 
 
 def make_es(data):

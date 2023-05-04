@@ -19,9 +19,9 @@ from featuretools.utils.gen_utils import Library
 
 BUCKET_NAME = "test-bucket"
 WRITE_KEY_NAME = "test-key"
-TEST_S3_URL = "s3://{}/{}".format(BUCKET_NAME, WRITE_KEY_NAME)
-TEST_FILE = "test_serialization_data_entityset_schema_{}_2022_2_16.tar".format(
-    SCHEMA_VERSION
+TEST_S3_URL = f"s3://{BUCKET_NAME}/{WRITE_KEY_NAME}"
+TEST_FILE = (
+    f"test_serialization_data_entityset_schema_{SCHEMA_VERSION}_2022_2_16.tar"
 )
 S3_URL = "s3://featuretools-static/" + TEST_FILE
 URL = "https://featuretools-static.s3.amazonaws.com/" + TEST_FILE
@@ -216,17 +216,15 @@ def s3_client():
     from moto import mock_s3
 
     with mock_s3():
-        s3 = boto3.resource("s3")
-        yield s3
+        yield boto3.resource("s3")
     os.environ.clear()
-    os.environ.update(_environ)
+    os.environ |= _environ
 
 
 @pytest.fixture
 def s3_bucket(s3_client):
     s3_client.create_bucket(Bucket=BUCKET_NAME, ACL="public-read-write")
-    s3_bucket = s3_client.Bucket(BUCKET_NAME)
-    yield s3_bucket
+    yield s3_client.Bucket(BUCKET_NAME)
 
 
 def make_public(s3_client, s3_bucket):
@@ -329,10 +327,7 @@ def test_serialize_subdirs_not_removed(es, tmpdir):
     test_dir = write_path.mkdir("test_dir")
     with open(str(write_path.join("data_description.json")), "w") as f:
         json.dump("__SAMPLE_TEXT__", f)
-    if es.dataframe_type == Library.SPARK.value:
-        compression = "none"
-    else:
-        compression = None
+    compression = "none" if es.dataframe_type == Library.SPARK.value else None
     serialize.write_data_description(
         es,
         path=str(write_path),
@@ -381,10 +376,11 @@ def test_operations_invalidate_metadata(es):
         index=es["customers"].index,
         logical_types=customers_ltypes,
     )
-    if not isinstance(es["sessions"], pd.DataFrame):
-        sessions_ltypes = es["sessions"].ww.logical_types
-    else:
-        sessions_ltypes = None
+    sessions_ltypes = (
+        None
+        if isinstance(es["sessions"], pd.DataFrame)
+        else es["sessions"].ww.logical_types
+    )
     new_es.add_dataframe(
         es["sessions"],
         "sessions",
@@ -429,16 +425,11 @@ def test_reset_metadata(es):
 def test_later_schema_version(es, caplog):
     def test_version(major, minor, patch, raises=True):
         version = ".".join([str(v) for v in [major, minor, patch]])
-        if raises:
-            warning_text = (
-                "The schema version of the saved entityset"
-                "(%s) is greater than the latest supported (%s). "
-                "You may need to upgrade featuretools. Attempting to load entityset ..."
-                % (version, SCHEMA_VERSION)
-            )
-        else:
-            warning_text = None
-
+        warning_text = (
+            f"The schema version of the saved entityset({version}) is greater than the latest supported ({SCHEMA_VERSION}). You may need to upgrade featuretools. Attempting to load entityset ..."
+            if raises
+            else None
+        )
         _check_schema_version(version, es, warning_text, caplog, "warn")
 
     major, minor, patch = [int(s) for s in SCHEMA_VERSION.split(".")]
@@ -452,15 +443,11 @@ def test_later_schema_version(es, caplog):
 def test_earlier_schema_version(es, caplog):
     def test_version(major, minor, patch, raises=True):
         version = ".".join([str(v) for v in [major, minor, patch]])
-        if raises:
-            warning_text = (
-                "The schema version of the saved entityset"
-                "(%s) is no longer supported by this version "
-                "of featuretools. Attempting to load entityset ..." % (version)
-            )
-        else:
-            warning_text = None
-
+        warning_text = (
+            f"The schema version of the saved entityset({version}) is no longer supported by this version of featuretools. Attempting to load entityset ..."
+            if raises
+            else None
+        )
         _check_schema_version(version, es, warning_text, caplog, "log")
 
     major, minor, patch = [int(s) for s in SCHEMA_VERSION.split(".")]

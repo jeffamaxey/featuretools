@@ -27,9 +27,8 @@ def three_worker_scheduler():
 
 @pytest.fixture(scope="session", autouse=True)
 def spark_session():
-    sql = import_or_none("pyspark.sql")
-    if sql:
-        spark = (
+    if sql := import_or_none("pyspark.sql"):
+        return (
             sql.SparkSession.builder.master("local[2]")
             .config(
                 "spark.driver.extraJavaOptions",
@@ -39,8 +38,6 @@ def spark_session():
             .config("spark.driver.bindAddress", "127.0.0.1")
             .getOrCreate()
         )
-
-        return spark
 
 
 @pytest.fixture(scope="session")
@@ -151,9 +148,9 @@ def es(request):
 
 @pytest.fixture
 def pd_latlong_df():
-    df = pd.DataFrame({"idx": [0, 1, 2], "latLong": [pd.NA, (1, 2), (pd.NA, pd.NA)]})
-
-    return df
+    return pd.DataFrame(
+        {"idx": [0, 1, 2], "latLong": [pd.NA, (1, 2), (pd.NA, pd.NA)]}
+    )
 
 
 @pytest.fixture
@@ -166,9 +163,7 @@ def spark_latlong_df(pd_latlong_df):
     ps = pytest.importorskip("pyspark.pandas", reason="Spark not installed, skipping")
     cleaned_df = pd_to_spark_clean(pd_latlong_df)
 
-    pdf = ps.from_pandas(cleaned_df)
-
-    return pdf
+    return ps.from_pandas(cleaned_df)
 
 
 @pytest.fixture(params=["pd_latlong_df", "dask_latlong_df", "spark_latlong_df"])
@@ -526,11 +521,10 @@ def pd_dataframes():
             "fraud": [True, False, False, False, True, True],
         }
     )
-    dataframes = {
+    return {
         "cards": (cards_df, "id"),
         "transactions": (transactions_df, "id", "transaction_time"),
     }
-    return dataframes
 
 
 @pytest.fixture
@@ -555,7 +549,7 @@ def dask_dataframes():
         "fraud": Boolean,
     }
 
-    dataframes = {
+    return {
         "cards": (cards_df, "id", None, cards_ltypes),
         "transactions": (
             transactions_df,
@@ -564,7 +558,6 @@ def dask_dataframes():
             transactions_ltypes,
         ),
     }
-    return dataframes
 
 
 @pytest.fixture
@@ -587,7 +580,7 @@ def spark_dataframes():
         "fraud": Boolean,
     }
 
-    dataframes = {
+    return {
         "cards": (cards_df, "id", None, cards_ltypes),
         "transactions": (
             transactions_df,
@@ -596,7 +589,6 @@ def spark_dataframes():
             transactions_ltypes,
         ),
     }
-    return dataframes
 
 
 @pytest.fixture

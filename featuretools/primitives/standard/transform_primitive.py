@@ -218,10 +218,11 @@ class IsIn(TransformPrimitive):
 
     def __init__(self, list_of_outputs=None):
         self.list_of_outputs = list_of_outputs
-        if not list_of_outputs:
-            stringified_output_list = "[]"
-        else:
-            stringified_output_list = ", ".join([str(x) for x in list_of_outputs])
+        stringified_output_list = (
+            ", ".join([str(x) for x in list_of_outputs])
+            if list_of_outputs
+            else "[]"
+        )
         self.description_template = "whether {{}} is in {}".format(
             stringified_output_list
         )
@@ -233,7 +234,7 @@ class IsIn(TransformPrimitive):
         return pd_is_in
 
     def generate_name(self, base_feature_names):
-        return "%s.isin(%s)" % (base_feature_names[0], str(self.list_of_outputs))
+        return f"{base_feature_names[0]}.isin({str(self.list_of_outputs)})"
 
 
 class Diff(TransformPrimitive):
@@ -288,7 +289,7 @@ class Negate(TransformPrimitive):
         return negate
 
     def generate_name(self, base_feature_names):
-        return "-(%s)" % (base_feature_names[0])
+        return f"-({base_feature_names[0]})"
 
 
 class Not(TransformPrimitive):
@@ -310,7 +311,7 @@ class Not(TransformPrimitive):
     description_template = "the negation of {}"
 
     def generate_name(self, base_feature_names):
-        return "NOT({})".format(base_feature_names[0])
+        return f"NOT({base_feature_names[0]})"
 
     def get_function(self):
         return np.logical_not

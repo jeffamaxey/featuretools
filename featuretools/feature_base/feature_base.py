@@ -97,10 +97,7 @@ class FeatureBase(object):
             else:
                 self._names = self.generate_names()
                 if self.get_name() != self.generate_name():
-                    self._names = [
-                        self.get_name() + "[{}]".format(i)
-                        for i in range(len(self._names))
-                    ]
+                    self._names = [f"{self.get_name()}[{i}]" for i in range(len(self._names))]
         return self._names
 
     def get_function(self, **kwargs):
@@ -116,11 +113,7 @@ class FeatureBase(object):
 
 
         """
-        deps = []
-
-        for d in self.base_features[:]:
-            deps += [d]
-
+        deps = list(self.base_features[:])
         if hasattr(self, "where") and self.where:
             deps += [self.where]
 
@@ -140,7 +133,7 @@ class FeatureBase(object):
         max_depth = 0
         stop_at_set = set()
         if stop_at is not None:
-            stop_at_set = set([i.unique_name() for i in stop_at])
+            stop_at_set = {i.unique_name() for i in stop_at}
             if self.unique_name() in stop_at_set:
                 return 0
         for dep in self.get_dependencies(deep=True, ignored=stop_at_set):
@@ -152,16 +145,15 @@ class FeatureBase(object):
             return True
 
         input_types = self.primitive.input_types
-        if input_types is not None:
-            if type(input_types[0]) != list:
-                input_types = [input_types]
-
-            for t in input_types:
-                zipped = list(zip(t, self.base_features))
-                if all([is_valid_input(f.column_schema, t) for t, f in zipped]):
-                    return True
-        else:
+        if input_types is None:
             return True
+        if type(input_types[0]) != list:
+            input_types = [input_types]
+
+        for t in input_types:
+            zipped = list(zip(t, self.base_features))
+            if all(is_valid_input(f.column_schema, t) for t, f in zipped):
+                return True
         return False
 
     @property
@@ -174,7 +166,7 @@ class FeatureBase(object):
         return self.primitive.number_output_features
 
     def __repr__(self):
-        return "<Feature: %s>" % (self.get_name())
+        return f"<Feature: {self.get_name()}>"
 
     def hash(self):
         return hash(self.get_name() + self.dataframe_name)
@@ -316,14 +308,11 @@ class FeatureBase(object):
 
     def __mul__(self, other):
         """Multiply by other"""
-        if isinstance(other, FeatureBase):
-            if all(
-                [
-                    isinstance(f.column_schema.logical_type, Boolean)
-                    for f in (self, other)
-                ]
-            ):
-                return Feature([self, other], primitive=primitives.MultiplyBoolean)
+        if isinstance(other, FeatureBase) and all(
+            isinstance(f.column_schema.logical_type, Boolean)
+            for f in (self, other)
+        ):
+            return Feature([self, other], primitive=primitives.MultiplyBoolean)
         return self._handle_binary_comparision(
             other, primitives.MultiplyNumeric, primitives.MultiplyNumericScalar
         )
@@ -386,7 +375,7 @@ class FeatureBase(object):
         return self.NOT()
 
     def unique_name(self):
-        return "%s: %s" % (self.dataframe_name, self.get_name())
+        return f"{self.dataframe_name}: {self.get_name()}"
 
     def relationship_path_name(self):
         return self.relationship_path.name
@@ -488,11 +477,9 @@ class DirectFeature(FeatureBase):
 
             if not relationship:
                 raise RuntimeError(
-                    'No relationship from "%s" to "%s" found.'
-                    % (child_dataframe.ww.name, self.parent_dataframe_name)
+                    f'No relationship from "{child_dataframe.ww.name}" to "{self.parent_dataframe_name}" found.'
                 )
 
-            # Check for another path.
             elif next(possible_relationships, None):
                 message = (
                     "There are multiple relationships to the base dataframe. "
@@ -555,7 +542,7 @@ class DirectFeature(FeatureBase):
         }
 
     def _name_from_base(self, base_name):
-        return "%s.%s" % (self.relationship_path_name(), base_name)
+        return f"{self.relationship_path_name()}.{base_name}"
 
 
 class AggregationFeature(FeatureBase):
@@ -593,9 +580,7 @@ class AggregationFeature(FeatureBase):
 
         if where is not None:
             self.where = _validate_base_features(where)[0]
-            msg = "Where feature must be defined on child dataframe {}".format(
-                self.child_dataframe_name
-            )
+            msg = f"Where feature must be defined on child dataframe {self.child_dataframe_name}"
             assert self.where.dataframe_name == self.child_dataframe_name, msg
 
         if use_previous:
@@ -653,10 +638,8 @@ class AggregationFeature(FeatureBase):
 
             if not first_path:
                 raise RuntimeError(
-                    'No backward path from "%s" to "%s" found.'
-                    % (parent_dataframe.ww.name, child_dataframe.ww.name)
+                    f'No backward path from "{parent_dataframe.ww.name}" to "{child_dataframe.ww.name}" found.'
                 )
-            # Check for another path.
             elif next(paths, None):
                 message = (
                     "There are multiple possible paths to the base dataframe. "
@@ -714,18 +697,15 @@ class AggregationFeature(FeatureBase):
         )
 
     def _where_str(self):
-        if self.where is not None:
-            where_str = " WHERE " + self.where.get_name()
-        else:
-            where_str = ""
-        return where_str
+        return f" WHERE {self.where.get_name()}" if self.where is not None else ""
 
     def _use_prev_str(self):
-        if self.use_previous is not None and hasattr(self.use_previous, "get_name"):
-            use_prev_str = ", Last {}".format(self.use_previous.get_name())
-        else:
-            use_prev_str = ""
-        return use_prev_str
+        return (
+            f", Last {self.use_previous.get_name()}"
+            if self.use_previous is not None
+            and hasattr(self.use_previous, "get_name")
+            else ""
+        )
 
     def generate_name(self):
         return self.primitive.generate_name(
@@ -855,13 +835,12 @@ class GroupByTransformFeature(TransformFeature):
         # place in the feature name
         base_names = [bf.get_name() for bf in self.base_features[:-1]]
         _name = self.primitive.generate_name(base_names)
-        return "{} by {}".format(_name, self.groupby.get_name())
+        return f"{_name} by {self.groupby.get_name()}"
 
     def generate_names(self):
         base_names = [bf.get_name() for bf in self.base_features[:-1]]
         _names = self.primitive.generate_names(base_names)
-        names = [name + " by {}".format(self.groupby.get_name()) for name in _names]
-        return names
+        return [f"{name} by {self.groupby.get_name()}" for name in _names]
 
     def get_arguments(self):
         # Do not include groupby in base_features.
@@ -883,22 +862,13 @@ class Feature(object):
     Alias to create feature. Infers the feature type based on init parameters.
     """
 
-    def __new__(
-        self,
-        base,
-        dataframe_name=None,
-        groupby=None,
-        parent_dataframe_name=None,
-        primitive=None,
-        use_previous=None,
-        where=None,
-    ):
+    def __new__(cls, base, dataframe_name=None, groupby=None, parent_dataframe_name=None, primitive=None, use_previous=None, where=None):
         # either direct or identity
         if primitive is None and dataframe_name is None:
             return IdentityFeature(base)
-        elif primitive is None and dataframe_name is not None:
+        elif primitive is None:
             return DirectFeature(base, dataframe_name)
-        elif primitive is not None and parent_dataframe_name is not None:
+        elif parent_dataframe_name is not None:
             assert isinstance(primitive, AggregationPrimitive) or issubclass(
                 primitive, AggregationPrimitive
             )
@@ -909,7 +879,7 @@ class Feature(object):
                 where=where,
                 primitive=primitive,
             )
-        elif primitive is not None:
+        else:
             assert isinstance(primitive, TransformPrimitive) or issubclass(
                 primitive, TransformPrimitive
             )
@@ -933,9 +903,7 @@ class FeatureOutputSlice(FeatureBase):
 
         msg = "cannot access slice from single output feature"
         assert self.num_output_parent > 1, msg
-        msg = "cannot access column that is not between 0 and " + str(
-            self.num_output_parent - 1
-        )
+        msg = f"cannot access column that is not between 0 and {str(self.num_output_parent - 1)}"
         assert n < self.num_output_parent, msg
 
         self.n = n
@@ -982,12 +950,12 @@ class FeatureOutputSlice(FeatureBase):
 
 
 def _validate_base_features(feature):
-    if "Series" == type(feature).__name__:
+    if type(feature).__name__ == "Series":
         return [IdentityFeature(feature)]
     elif hasattr(feature, "__iter__"):
         features = [_validate_base_features(f)[0] for f in feature]
         msg = "all base features must share the same dataframe"
-        assert len(set([bf.dataframe_name for bf in features])) == 1, msg
+        assert len({bf.dataframe_name for bf in features}) == 1, msg
         return features
     elif isinstance(feature, FeatureBase):
         return [feature]

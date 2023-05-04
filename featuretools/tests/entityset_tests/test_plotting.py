@@ -77,20 +77,20 @@ def test_invalid_format(es):
 def test_multiple_rows(es):
     plot_ = es.plot()
     result = re.findall(r"\((\d+\srows?)\)", plot_.source)
-    expected = ["{} rows".format(str(i.shape[0])) for i in es.dataframes]
     if es.dataframe_type == Library.DASK.value:
         # Dask does not list number of rows in plot
         assert result == []
     else:
+        expected = [f"{str(i.shape[0])} rows" for i in es.dataframes]
         assert result == expected
 
 
 def test_single_row(simple_es):
     plot_ = simple_es.plot()
     result = re.findall(r"\((\d+\srows?)\)", plot_.source)
-    expected = ["1 row"]
     if simple_es.dataframe_type == Library.DASK.value:
         # Dask does not list number of rows in plot
         assert result == []
     else:
+        expected = ["1 row"]
         assert result == expected

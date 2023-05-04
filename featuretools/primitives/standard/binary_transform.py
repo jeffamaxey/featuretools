@@ -38,7 +38,7 @@ class GreaterThan(TransformPrimitive):
         return np.greater
 
     def generate_name(self, base_feature_names):
-        return "%s > %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} > {base_feature_names[1]}"
 
 
 class GreaterThanScalar(TransformPrimitive):
@@ -75,7 +75,7 @@ class GreaterThanScalar(TransformPrimitive):
         return greater_than_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s > %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} > {str(self.value)}"
 
 
 class GreaterThanEqualTo(TransformPrimitive):
@@ -109,7 +109,7 @@ class GreaterThanEqualTo(TransformPrimitive):
         return np.greater_equal
 
     def generate_name(self, base_feature_names):
-        return "%s >= %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} >= {base_feature_names[1]}"
 
 
 class GreaterThanEqualToScalar(TransformPrimitive):
@@ -148,7 +148,7 @@ class GreaterThanEqualToScalar(TransformPrimitive):
         return greater_than_equal_to_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s >= %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} >= {str(self.value)}"
 
 
 class LessThan(TransformPrimitive):
@@ -182,7 +182,7 @@ class LessThan(TransformPrimitive):
         return np.less
 
     def generate_name(self, base_feature_names):
-        return "%s < %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} < {base_feature_names[1]}"
 
 
 class LessThanScalar(TransformPrimitive):
@@ -219,7 +219,7 @@ class LessThanScalar(TransformPrimitive):
         return less_than_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s < %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} < {str(self.value)}"
 
 
 class LessThanEqualTo(TransformPrimitive):
@@ -253,7 +253,7 @@ class LessThanEqualTo(TransformPrimitive):
         return np.less_equal
 
     def generate_name(self, base_feature_names):
-        return "%s <= %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} <= {base_feature_names[1]}"
 
 
 class LessThanEqualToScalar(TransformPrimitive):
@@ -292,7 +292,7 @@ class LessThanEqualToScalar(TransformPrimitive):
         return less_than_equal_to_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s <= %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} <= {str(self.value)}"
 
 
 class Equal(TransformPrimitive):
@@ -335,7 +335,7 @@ class Equal(TransformPrimitive):
         return equal
 
     def generate_name(self, base_feature_names):
-        return "%s = %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} = {base_feature_names[1]}"
 
 
 class EqualScalar(TransformPrimitive):
@@ -367,7 +367,7 @@ class EqualScalar(TransformPrimitive):
         return equal_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s = %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} = {str(self.value)}"
 
 
 class NotEqual(TransformPrimitive):
@@ -410,7 +410,7 @@ class NotEqual(TransformPrimitive):
         return not_equal
 
     def generate_name(self, base_feature_names):
-        return "%s != %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} != {base_feature_names[1]}"
 
 
 class NotEqualScalar(TransformPrimitive):
@@ -442,7 +442,7 @@ class NotEqualScalar(TransformPrimitive):
         return not_equal_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s != %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} != {str(self.value)}"
 
 
 class AddNumeric(TransformPrimitive):
@@ -473,7 +473,7 @@ class AddNumeric(TransformPrimitive):
         return np.add
 
     def generate_name(self, base_feature_names):
-        return "%s + %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} + {base_feature_names[1]}"
 
 
 class AddNumericScalar(TransformPrimitive):
@@ -505,7 +505,7 @@ class AddNumericScalar(TransformPrimitive):
         return add_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s + %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} + {str(self.value)}"
 
 
 class SubtractNumeric(TransformPrimitive):
@@ -543,7 +543,7 @@ class SubtractNumeric(TransformPrimitive):
         return np.subtract
 
     def generate_name(self, base_feature_names):
-        return "%s - %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} - {base_feature_names[1]}"
 
 
 class SubtractNumericScalar(TransformPrimitive):
@@ -575,7 +575,7 @@ class SubtractNumericScalar(TransformPrimitive):
         return subtract_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s - %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} - {str(self.value)}"
 
 
 class ScalarSubtractNumericFeature(TransformPrimitive):
@@ -608,7 +608,7 @@ class ScalarSubtractNumericFeature(TransformPrimitive):
         return scalar_subtract_numeric_feature
 
     def generate_name(self, base_feature_names):
-        return "%s - %s" % (str(self.value), base_feature_names[0])
+        return f"{str(self.value)} - {base_feature_names[0]}"
 
 
 class MultiplyNumeric(TransformPrimitive):
@@ -651,7 +651,7 @@ class MultiplyNumeric(TransformPrimitive):
         return np.multiply
 
     def generate_name(self, base_feature_names):
-        return "%s * %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} * {base_feature_names[1]}"
 
 
 class MultiplyNumericScalar(TransformPrimitive):
@@ -683,7 +683,7 @@ class MultiplyNumericScalar(TransformPrimitive):
         return multiply_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s * %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} * {str(self.value)}"
 
 
 class MultiplyBoolean(TransformPrimitive):
@@ -725,7 +725,7 @@ class MultiplyBoolean(TransformPrimitive):
         return np.bitwise_and
 
     def generate_name(self, base_feature_names):
-        return "%s * %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} * {base_feature_names[1]}"
 
 
 class DivideNumeric(TransformPrimitive):
@@ -763,7 +763,7 @@ class DivideNumeric(TransformPrimitive):
         return np.divide
 
     def generate_name(self, base_feature_names):
-        return "%s / %s" % (base_feature_names[0], base_feature_names[1])
+        return f"{base_feature_names[0]} / {base_feature_names[1]}"
 
 
 class DivideNumericScalar(TransformPrimitive):
@@ -797,7 +797,7 @@ class DivideNumericScalar(TransformPrimitive):
         return divide_scalar
 
     def generate_name(self, base_feature_names):
-        return "%s / %s" % (base_feature_names[0], str(self.value))
+        return f"{base_feature_names[0]} / {str(self.value)}"
 
 
 class DivideByFeature(TransformPrimitive):
@@ -832,7 +832,7 @@ class DivideByFeature(TransformPrimitive):
         return divide_by_feature
 
     def generate_name(self, base_feature_names):
-        return "%s / %s" % (str(self.value), base_feature_names[0])
+        return f"{str(self.value)} / {base_feature_names[0]}"
 
 
 class ModuloNumeric(TransformPrimitive):
@@ -974,7 +974,7 @@ class And(TransformPrimitive):
         return np.logical_and
 
     def generate_name(self, base_feature_names):
-        return "AND(%s, %s)" % (base_feature_names[0], base_feature_names[1])
+        return f"AND({base_feature_names[0]}, {base_feature_names[1]})"
 
 
 class Or(TransformPrimitive):
@@ -1016,4 +1016,4 @@ class Or(TransformPrimitive):
         return np.logical_or
 
     def generate_name(self, base_feature_names):
-        return "OR(%s, %s)" % (base_feature_names[0], base_feature_names[1])
+        return f"OR({base_feature_names[0]}, {base_feature_names[1]})"

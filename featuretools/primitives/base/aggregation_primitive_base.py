@@ -17,14 +17,7 @@ class AggregationPrimitive(PrimitiveBase):
         use_prev_str,
     ):
         base_features_str = ", ".join(base_feature_names)
-        return "%s(%s.%s%s%s%s)" % (
-            self.name.upper(),
-            relationship_path_name,
-            base_features_str,
-            where_str,
-            use_prev_str,
-            self.get_args_string(),
-        )
+        return f"{self.name.upper()}({relationship_path_name}.{base_features_str}{where_str}{use_prev_str}{self.get_args_string()})"
 
     def generate_names(
         self,
@@ -42,4 +35,4 @@ class AggregationPrimitive(PrimitiveBase):
             where_str,
             use_prev_str,
         )
-        return [base_name + "[%s]" % i for i in range(n)]
+        return [f"{base_name}[{i}]" for i in range(n)]

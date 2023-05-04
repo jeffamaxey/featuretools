@@ -36,10 +36,7 @@ def test_direct_from_identity(es):
     df = calculator.run(np.array([0, 5]))
     df = to_pandas(df, index="id", sort_index=True)
     v = df[d.get_name()].tolist()
-    if es.dataframe_type == Library.SPARK.value:
-        expected = ["0", "1"]
-    else:
-        expected = [0, 1]
+    expected = ["0", "1"] if es.dataframe_type == Library.SPARK.value else [0, 1]
     assert v == expected
 
 
@@ -53,10 +50,7 @@ def test_direct_from_column(es):
     df = calculator.run(np.array([0, 5]))
     df = to_pandas(df, index="id", sort_index=True)
     v = df[d.get_name()].tolist()
-    if es.dataframe_type == Library.SPARK.value:
-        expected = ["0", "1"]
-    else:
-        expected = [0, 1]
+    expected = ["0", "1"] if es.dataframe_type == Library.SPARK.value else [0, 1]
     assert v == expected
 
 
@@ -151,6 +145,7 @@ def test_direct_of_multi_output_transform_feat(es):
 
 
 def test_direct_features_of_multi_output_agg_primitives(pd_es):
+
     class ThreeMostCommonCat(AggregationPrimitive):
         name = "n_most_common_categorical"
         input_types = [ColumnSchema(semantic_tags={"category"})]
@@ -192,7 +187,7 @@ def test_direct_features_of_multi_output_agg_primitives(pd_es):
         0: ["coke zero", "car", np.nan],
         1: ["toothpaste", "brown bag", np.nan],
         2: ["brown bag", np.nan, np.nan],
-        3: set(["Haribo sugar-free gummy bears", "coke zero", np.nan]),
+        3: {"Haribo sugar-free gummy bears", "coke zero", np.nan},
         4: ["coke zero", np.nan, np.nan],
         5: ["taco clock", np.nan, np.nan],
     }

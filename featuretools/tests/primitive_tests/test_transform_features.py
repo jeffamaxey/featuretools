@@ -76,9 +76,12 @@ def test_init_and_name(es):
     # check all transform primitives have a name
     for attribute_string in dir(ft.primitives):
         attr = getattr(ft.primitives, attribute_string)
-        if isclass(attr):
-            if issubclass(attr, TransformPrimitive) and attr != TransformPrimitive:
-                assert getattr(attr, "name") is not None
+        if (
+            isclass(attr)
+            and issubclass(attr, TransformPrimitive)
+            and attr != TransformPrimitive
+        ):
+            assert getattr(attr, "name") is not None
 
     trans_primitives = get_transform_primitives().values()
     # If Dask EntitySet use only Dask compatible primitives
@@ -106,7 +109,7 @@ def test_init_and_name(es):
         else:
             matching_inputs = match(input_types, features_to_use)
         if len(matching_inputs) == 0:
-            raise Exception("Transform Primitive %s not tested" % transform_prim.name)
+            raise Exception(f"Transform Primitive {transform_prim.name} not tested")
         for prim in matching_inputs:
             instance = ft.Feature(prim, primitive=transform_prim)
 
@@ -175,15 +178,15 @@ def pd_simple_es():
 
 @pytest.fixture
 def dd_simple_es(pd_simple_es):
-    dataframes = {}
-    for df in pd_simple_es.dataframes:
-        dataframes[df.ww.name] = (
+    dataframes = {
+        df.ww.name: (
             dd.from_pandas(df.reset_index(drop=True), npartitions=4),
             df.ww.index,
             None,
             df.ww.logical_types,
         )
-
+        for df in pd_simple_es.dataframes
+    }
     relationships = [
         (
             rel.parent_name,
@@ -425,10 +428,10 @@ def test_compare_of_identity(es):
         (GreaterThanEqualToScalar, [False, False, True, True]),
     ]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature(es["log"].ww["value"], primitive=test[0](10)))
-
+    features = [
+        ft.Feature(es["log"].ww["value"], primitive=test[0](10))
+        for test in to_test
+    ]
     df = to_pandas(
         ft.calculate_feature_matrix(
             entityset=es, features=features, instance_ids=[0, 1, 2, 3]
@@ -453,10 +456,7 @@ def test_compare_of_direct(es):
         (GreaterThanEqualToScalar, [True, True, True, False]),
     ]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature(log_rating, primitive=test[0](4.5)))
-
+    features = [ft.Feature(log_rating, primitive=test[0](4.5)) for test in to_test]
     df = ft.calculate_feature_matrix(
         entityset=es, features=features, instance_ids=[0, 1, 2, 3]
     )
@@ -478,10 +478,7 @@ def test_compare_of_transform(es):
         (GreaterThanEqualToScalar, [False, True]),
     ]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature(day, primitive=test[0](10)))
-
+    features = [ft.Feature(day, primitive=test[0](10)) for test in to_test]
     df = ft.calculate_feature_matrix(
         entityset=es, features=features, instance_ids=[0, 14]
     )
@@ -506,10 +503,7 @@ def test_compare_of_agg(es):
         (GreaterThanEqualToScalar, [True, True, False, True]),
     ]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature(count_logs, primitive=test[0](2)))
-
+    features = [ft.Feature(count_logs, primitive=test[0](2)) for test in to_test]
     df = ft.calculate_feature_matrix(
         entityset=es, features=features, instance_ids=[0, 1, 2, 3]
     )
@@ -639,10 +633,10 @@ def test_arithmetic_of_direct(es):
     if es.dataframe_type == Library.SPARK.value:
         to_test = to_test[:1] + to_test[2:]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature([log_age, log_rating], primitive=test[0]))
-
+    features = [
+        ft.Feature([log_age, log_rating], primitive=test[0])
+        for test in to_test
+    ]
     df = ft.calculate_feature_matrix(
         entityset=es, features=features, instance_ids=[0, 3, 5, 7]
     )
@@ -677,15 +671,15 @@ def pd_boolean_mult_es():
 
 @pytest.fixture
 def dask_boolean_mult_es(pd_boolean_mult_es):
-    dataframes = {}
-    for df in pd_boolean_mult_es.dataframes:
-        dataframes[df.ww.name] = (
+    dataframes = {
+        df.ww.name: (
             dd.from_pandas(df, npartitions=2),
             df.ww.index,
             None,
             df.ww.logical_types,
         )
-
+        for df in pd_boolean_mult_es.dataframes
+    }
     return ft.EntitySet(id=pd_boolean_mult_es.id, dataframes=dataframes)
 
 
@@ -697,18 +691,16 @@ def test_boolean_multiply(boolean_mult_es):
         ("bool", "numeric"),
         ("bool", "bool"),
     ]
-    features = []
-    for row in to_test:
-        features.append(
-            ft.Feature(es["test"].ww[row[0]]) * ft.Feature(es["test"].ww[row[1]])
-        )
-
+    features = [
+        ft.Feature(es["test"].ww[row[0]]) * ft.Feature(es["test"].ww[row[1]])
+        for row in to_test
+    ]
     fm = to_pandas(ft.calculate_feature_matrix(entityset=es, features=features))
 
     df = to_pandas(es["test"])
 
     for row in to_test:
-        col_name = "{} * {}".format(row[0], row[1])
+        col_name = f"{row[0]} * {row[1]}"
         if row[0] == "bool" and row[1] == "bool":
             assert fm[col_name].equals((df[row[0]] & df[row[1]]).astype("boolean"))
         else:
@@ -729,10 +721,9 @@ def test_arithmetic_of_transform(es):
         (DivideNumeric, [np.nan, 2.5, 2.5, 2.3333333333333335]),
     ]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature([diff1, diff2], primitive=test[0]()))
-
+    features = [
+        ft.Feature([diff1, diff2], primitive=test[0]()) for test in to_test
+    ]
     feature_set = FeatureSet(features)
     calculator = FeatureSetCalculator(es, feature_set=feature_set)
     df = calculator.run(np.array([0, 2, 12, 13]))
@@ -775,10 +766,10 @@ def test_arithmetic_of_agg(es):
     if es.dataframe_type == Library.SPARK.value:
         to_test = to_test[:1] + to_test[2:]
 
-    features = []
-    for test in to_test:
-        features.append(ft.Feature([count_customer, count_stores], primitive=test[0]()))
-
+    features = [
+        ft.Feature([count_customer, count_stores], primitive=test[0]())
+        for test in to_test
+    ]
     ids = ["United States", "Mexico"]
     df = ft.calculate_feature_matrix(entityset=es, features=features, instance_ids=ids)
     df = to_pandas(df, index="id", sort_index=True)
@@ -1305,6 +1296,9 @@ def test_two_kinds_of_dependents(pd_es):
 
 
 def test_get_filepath(es):
+
+
+
     class Mod4(TransformPrimitive):
         """Return base feature modulo 4"""
 
@@ -1319,13 +1313,12 @@ def test_get_filepath(es):
 
             def map_to_word(x):
                 def _map(x):
-                    if pd.isnull(x):
-                        return x
-                    return reference[int(x) % 4]
+                    return x if pd.isnull(x) else reference[int(x) % 4]
 
                 return x.apply(_map)
 
             return map_to_word
+
 
     feat = ft.Feature(es["log"].ww["value"], primitive=Mod4)
     df = ft.calculate_feature_matrix(
@@ -1351,9 +1344,9 @@ def test_get_filepath(es):
 def test_override_multi_feature_names(pd_es):
     def gen_custom_names(primitive, base_feature_names):
         return [
-            "Above18(%s)" % base_feature_names,
-            "Above21(%s)" % base_feature_names,
-            "Above65(%s)" % base_feature_names,
+            f"Above18({base_feature_names})",
+            f"Above21({base_feature_names})",
+            f"Above65({base_feature_names})",
         ]
 
     class IsGreater(TransformPrimitive):

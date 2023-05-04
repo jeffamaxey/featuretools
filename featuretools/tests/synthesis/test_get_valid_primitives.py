@@ -17,28 +17,28 @@ def test_get_valid_primitives_selected_primitives(es):
     agg_prims, trans_prims = get_valid_primitives(
         es, "log", selected_primitives=[Hour, Count]
     )
-    assert set(agg_prims) == set([Count])
-    assert set(trans_prims) == set([Hour])
+    assert set(agg_prims) == {Count}
+    assert set(trans_prims) == {Hour}
 
     agg_prims, trans_prims = get_valid_primitives(
         es, "products", selected_primitives=[Hour], max_depth=1
     )
-    assert set(agg_prims) == set()
-    assert set(trans_prims) == set()
+    assert not set(agg_prims)
+    assert not set(trans_prims)
 
 
 def test_get_valid_primitives_selected_primitives_strings(es):
     agg_prims, trans_prims = get_valid_primitives(
         es, "log", selected_primitives=["hour", "count"]
     )
-    assert set(agg_prims) == set([Count])
-    assert set(trans_prims) == set([Hour])
+    assert set(agg_prims) == {Count}
+    assert set(trans_prims) == {Hour}
 
     agg_prims, trans_prims = get_valid_primitives(
         es, "products", selected_primitives=["hour"], max_depth=1
     )
-    assert set(agg_prims) == set()
-    assert set(trans_prims) == set()
+    assert not set(agg_prims)
+    assert not set(trans_prims)
 
 
 def test_invalid_primitive(es):
@@ -109,5 +109,5 @@ def test_get_valid_primitives_single_table(transform_es):
     with pytest.warns(UserWarning, match=msg):
         agg_prims, trans_prims = get_valid_primitives(transform_es, "first")
 
-    assert set(agg_prims) == set()
+    assert not set(agg_prims)
     assert IsIn in trans_prims

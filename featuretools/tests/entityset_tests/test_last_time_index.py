@@ -26,7 +26,7 @@ def values_es(es):
 
 @pytest.fixture
 def true_values_lti():
-    true_values_lti = pd.Series(
+    return pd.Series(
         [
             datetime(2011, 4, 10, 10, 41, 0),
             datetime(2011, 4, 9, 10, 31, 9),
@@ -41,12 +41,11 @@ def true_values_lti():
             datetime(2011, 4, 10, 11, 10, 3),
         ]
     )
-    return true_values_lti
 
 
 @pytest.fixture
 def true_sessions_lti():
-    sessions_lti = pd.Series(
+    return pd.Series(
         [
             datetime(2011, 4, 9, 10, 30, 24),
             datetime(2011, 4, 9, 10, 31, 27),
@@ -56,12 +55,11 @@ def true_sessions_lti():
             datetime(2011, 4, 10, 11, 10, 3),
         ]
     )
-    return sessions_lti
 
 
 @pytest.fixture
 def wishlist_df():
-    wishlist_df = pd.DataFrame(
+    return pd.DataFrame(
         {
             "session_id": [0, 1, 2, 2, 3, 4, 5],
             "datetime": [
@@ -84,7 +82,6 @@ def wishlist_df():
             ],
         }
     )
-    return wishlist_df
 
 
 @pytest.fixture
@@ -119,7 +116,7 @@ class TestLastTimeIndex(object):
     def test_leaf_no_time_index(self, es):
         es.add_last_time_indexes()
         stores = es["stores"]
-        true_lti = pd.Series([None for x in range(6)], dtype="datetime64[ns]")
+        true_lti = pd.Series([None for _ in range(6)], dtype="datetime64[ns]")
 
         assert len(true_lti) == len(stores[LTI_COLUMN_NAME])
 

@@ -127,11 +127,7 @@ def n_jobs_to_workers(n_jobs):
 
     # Taken from sklearn parallel_backends code
     # https://github.com/scikit-learn/scikit-learn/blob/27bbdb570bac062c71b3bb21b0876fd78adc9f7e/sklearn/externals/joblib/_parallel_backends.py#L120
-    if n_jobs < 0:
-        workers = max(cpus + 1 + n_jobs, 1)
-    else:
-        workers = min(n_jobs, cpus)
-
+    workers = max(cpus + 1 + n_jobs, 1) if n_jobs < 0 else min(n_jobs, cpus)
     assert workers > 0, "Need at least one worker"
     return workers
 
@@ -179,12 +175,15 @@ def create_client_and_cluster(n_jobs, dask_kwargs, entityset_size):
         )
 
         # if cluster has bokeh port, notify user if unexpected port number
-        if diagnostics_port is not None:
-            if hasattr(cluster, "scheduler") and cluster.scheduler:
-                info = cluster.scheduler.identity()
-                if "bokeh" in info["services"]:
-                    msg = "Dashboard started on port {}"
-                    print(msg.format(info["services"]["bokeh"]))
+        if (
+            diagnostics_port is not None
+            and hasattr(cluster, "scheduler")
+            and cluster.scheduler
+        ):
+            info = cluster.scheduler.identity()
+            if "bokeh" in info["services"]:
+                msg = "Dashboard started on port {}"
+                print(msg.format(info["services"]["bokeh"]))
 
     client = Client(cluster)
 
@@ -232,16 +231,17 @@ def _validate_cutoff_time(cutoff_time, target_dataframe):
         cutoff_time = cutoff_time.reset_index(drop=True)
 
         if "instance_id" not in cutoff_time.columns:
-            if target_dataframe.ww.index not in cutoff_time.columns:
+            if target_dataframe.ww.index in cutoff_time.columns:
+                # rename to instance_id
+                cutoff_time.rename(
+                    columns={target_dataframe.ww.index: "instance_id"}, inplace=True
+                )
+
+            else:
                 raise AttributeError(
                     "Cutoff time DataFrame must contain a column with either the same name"
                     ' as the target dataframe index or a column named "instance_id"'
                 )
-            # rename to instance_id
-            cutoff_time.rename(
-                columns={target_dataframe.ww.index: "instance_id"}, inplace=True
-            )
-
         if "time" not in cutoff_time.columns:
             if (
                 target_dataframe.ww.time_index
@@ -260,7 +260,7 @@ def _validate_cutoff_time(cutoff_time, target_dataframe):
         if (
             "instance_id" in cutoff_time.columns
             and target_dataframe.ww.index in cutoff_time.columns
-            and "instance_id" != target_dataframe.ww.index
+            and target_dataframe.ww.index != "instance_id"
         ):
             raise AttributeError(
                 'Cutoff time DataFrame cannot contain both a column named "instance_id" and a column'
@@ -269,7 +269,7 @@ def _validate_cutoff_time(cutoff_time, target_dataframe):
         if (
             "time" in cutoff_time.columns
             and target_dataframe.ww.time_index in cutoff_time.columns
-            and "time" != target_dataframe.ww.time_index
+            and target_dataframe.ww.time_index != "time"
         ):
             raise AttributeError(
                 'Cutoff time DataFrame cannot contain both a column named "time" and a column'
@@ -279,9 +279,8 @@ def _validate_cutoff_time(cutoff_time, target_dataframe):
         assert (
             cutoff_time[["instance_id", "time"]].duplicated().sum() == 0
         ), "Duplicated rows in cutoff time dataframe."
-    else:
-        if isinstance(cutoff_time, list):
-            raise TypeError("cutoff_time must be a single value or DataFrame")
+    elif isinstance(cutoff_time, list):
+        raise TypeError("cutoff_time must be a single value or DataFrame")
 
     return cutoff_time
 
@@ -358,7 +357,9 @@ def get_ww_types_from_features(
 
             if logical_types[name] is None and "numeric" in semantic_tags[name]:
                 logical_types[name] = Double
-        if all([f.primitive is None for f in feature.get_dependencies(deep=True)]):
+        if all(
+            f.primitive is None for f in feature.get_dependencies(deep=True)
+        ):
             origins[name] = "base"
         else:
             origins[name] = "engineered"
@@ -379,9 +380,8 @@ def get_ww_types_from_features(
         semantic_tags[index_col] -= {"index"}
         origins[index_col] = "base"
 
-    ww_init = {
+    return {
         "logical_types": logical_types,
         "semantic_tags": semantic_tags,
         "column_origins": origins,
     }
-    return ww_init

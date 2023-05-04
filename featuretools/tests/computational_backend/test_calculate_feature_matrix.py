@@ -201,11 +201,13 @@ def test_cfm_dask_compose(dask_es, lt):
 # tests approximate, skip for dask/spark
 def test_cfm_approximate_correct_ordering():
     trips = {
-        "trip_id": [i for i in range(1000)],
-        "flight_time": [datetime(1998, 4, 2) for i in range(350)]
-        + [datetime(1997, 4, 3) for i in range(650)],
-        "flight_id": [randint(1, 25) for i in range(1000)],
-        "trip_duration": [randint(1, 999) for i in range(1000)],
+        "trip_id": list(range(1000)),
+        "flight_time": (
+            [datetime(1998, 4, 2) for _ in range(350)]
+            + [datetime(1997, 4, 3) for _ in range(650)]
+        ),
+        "flight_id": [randint(1, 25) for _ in range(1000)],
+        "trip_duration": [randint(1, 999) for _ in range(1000)],
     }
     df = pd.DataFrame.from_dict(trips)
     es = EntitySet("flights")
@@ -1067,7 +1069,7 @@ def test_approximate_time_split_returns_the_same_result(pd_es):
         [dfeat, agg_feat], pd_es, approximate=Timedelta(10, "s"), cutoff_time=cutoff_df
     )
     divided_matrices = []
-    separate_cutoff = [cutoff_df.iloc[0:1], cutoff_df.iloc[1:]]
+    separate_cutoff = [cutoff_df.iloc[:1], cutoff_df.iloc[1:]]
     # Make sure indexes are different
     # Note that this step is unnecessary and done to showcase the issue here
     separate_cutoff[0].index = [0]
@@ -1305,7 +1307,7 @@ def test_instances_after_cutoff_time_removed(es):
     )
 
     # Customer with id 1 should be removed
-    assert set(actual_ids) == set([2, 0])
+    assert set(actual_ids) == {2, 0}
 
 
 # TODO: Dask and Spark do not keep instance_id after cutoff
@@ -1331,7 +1333,7 @@ def test_instances_with_id_kept_after_cutoff(es):
         if isinstance(fm.index, pd.MultiIndex)
         else fm.index
     )
-    assert set(actual_ids) == set([0, 1, 2])
+    assert set(actual_ids) == {0, 1, 2}
 
 
 # TODO: Fails with Dask
@@ -2216,8 +2218,10 @@ def test_cfm_with_invalid_time_index(es):
         entityset=es, target_dataframe_name="customers", features_only=True
     )
     es["customers"].ww.set_types(logical_types={"signup_date": "integer"})
-    match = "customers time index is numeric type "
-    match += "which differs from other entityset time indexes"
+    match = (
+        "customers time index is numeric type "
+        + "which differs from other entityset time indexes"
+    )
     with pytest.raises(TypeError, match=match):
         calculate_feature_matrix(features=features, entityset=es)
 

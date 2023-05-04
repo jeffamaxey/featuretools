@@ -395,7 +395,7 @@ class FeatureSetCalculator(object):
         """
         relationship_name = relationship.parent_name
         new_relationship_columns = [
-            "%s.%s" % (relationship_name, col) for col in ancestor_relationship_columns
+            f"{relationship_name}.{col}" for col in ancestor_relationship_columns
         ]
 
         # create an intermediate dataframe which shares a column
@@ -463,13 +463,13 @@ class FeatureSetCalculator(object):
         elif type(f) == IdentityFeature:
             return self._calculate_identity_features
         else:
-            raise UnknownFeature("{} feature unknown".format(f.__class__))
+            raise UnknownFeature(f"{f.__class__} feature unknown")
 
     def _calculate_identity_features(self, features, df, _df_trie, progress_callback):
         for f in features:
-            assert f.get_name() in df.columns, (
-                'Column "%s" missing frome dataframe' % f.get_name()
-            )
+            assert (
+                f.get_name() in df.columns
+            ), f'Column "{f.get_name()}" missing frome dataframe'
 
         progress_callback(len(features) / float(self.num_features))
 
@@ -531,10 +531,7 @@ class FeatureSetCalculator(object):
         ].unique()  # get all the unique group name to iterate over later
 
         for f in features:
-            feature_vals = []
-            for _ in range(f.number_output_features):
-                feature_vals.append([])
-
+            feature_vals = [[] for _ in range(f.number_output_features)]
             for group in groups:
                 # skip null key if it exists
                 if pd.isnull(group):
@@ -596,7 +593,7 @@ class FeatureSetCalculator(object):
                 for name in f.get_feature_names()
                 if not pd.isna(f.default_value)
             }
-            fillna_dict.update(feature_defaults)
+            fillna_dict |= feature_defaults
             if f.base_features[0].get_name() == relationship._parent_column_name:
                 index_as_feature = f
             base_names = f.base_features[0].get_feature_names()
@@ -719,10 +716,10 @@ class FeatureSetCalculator(object):
                         # if the same function is being applied to the same
                         # column twice, wrap it in a partial to avoid
                         # duplicate functions
-                        funcname = str(id(func))
+                        funcname = id(func)
                         if "{}-{}".format(column_id, funcname) in agg_rename:
                             func = partial(func)
-                            funcname = str(id(func))
+                            funcname = id(func)
 
                         func.__name__ = funcname
 

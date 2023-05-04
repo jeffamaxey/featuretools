@@ -160,7 +160,7 @@ def calculate_feature_matrix(
     assert (
         isinstance(features, list)
         and features != []
-        and all([isinstance(feature, FeatureBase) for feature in features])
+        and all(isinstance(feature, FeatureBase) for feature in features)
     ), "features must be a non-empty list of features"
 
     # handle loading entityset
@@ -200,11 +200,7 @@ def calculate_feature_matrix(
     else:
         pass_columns = []
         if cutoff_time is None:
-            if entityset.time_type == "numeric":
-                cutoff_time = np.inf
-            else:
-                cutoff_time = datetime.now()
-
+            cutoff_time = np.inf if entityset.time_type == "numeric" else datetime.now()
         if instance_ids is None:
             index_col = target_dataframe.ww.index
             df = entityset._handle_time(
@@ -305,10 +301,10 @@ def calculate_feature_matrix(
     }
 
     if verbose:
-        tqdm_options.update({"disable": False})
+        tqdm_options["disable"] = False
     elif progress_callback is not None:
         # allows us to utilize progress_bar updates without printing to anywhere
-        tqdm_options.update({"file": open(os.devnull, "w"), "disable": False})
+        tqdm_options |= {"file": open(os.devnull, "w"), "disable": False}
 
     with make_tqdm_iterator(**tqdm_options) as progress_bar:
         if n_jobs != 1 or dask_kwargs is not None:
@@ -409,11 +405,7 @@ def calculate_chunk(
 
     feature_matrix = []
     if no_unapproximated_aggs and approximate is not None:
-        if entityset.time_type == "numeric":
-            group_time = np.inf
-        else:
-            group_time = datetime.now()
-
+        group_time = np.inf if entityset.time_type == "numeric" else datetime.now()
     if isinstance(cutoff_time, tuple):
         update_progress_callback = None
         if progress_bar is not None:
@@ -758,7 +750,7 @@ def parallel_calculate_chunks(
         # scatter the entityset
         # denote future with leading underscore
         start = time.time()
-        es_token = "EntitySet-{}".format(tokenize(entityset))
+        es_token = f"EntitySet-{tokenize(entityset)}"
         if es_token in client.list_datasets():
             msg = "Using EntitySet persisted on the cluster as dataset {}"
             progress_bar.write(msg.format(es_token))
@@ -881,7 +873,7 @@ def _add_approx_dataframe_index_col(es, target_dataframe_name, cutoffs, path):
 
         # Rename relationship.child_column to include the columns we have
         # joined through.
-        new_col_name = "%s.%s" % (last_child_col, relationship._child_column_name)
+        new_col_name = f"{last_child_col}.{relationship._child_column_name}"
         to_rename = {relationship._child_column_name: new_col_name}
         child_df = child_df.rename(columns=to_rename)
         cutoffs = cutoffs.merge(

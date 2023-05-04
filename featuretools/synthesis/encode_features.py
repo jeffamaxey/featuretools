@@ -86,17 +86,11 @@ def encode_features(
         msg = "feature_matrix must be a Pandas DataFrame"
         raise TypeError(msg)
 
-    if inplace:
-        X = feature_matrix
-    else:
-        X = feature_matrix.copy()
-
+    X = feature_matrix if inplace else feature_matrix.copy()
     old_feature_names = set()
     for feature in features:
         for fname in feature.get_feature_names():
-            assert fname in X.columns, "Feature %s not found in feature matrix" % (
-                fname
-            )
+            assert fname in X.columns, f"Feature {fname} not found in feature matrix"
             old_feature_names.add(fname)
 
     pass_through = [col for col in X.columns if col not in old_feature_names]
@@ -111,24 +105,26 @@ def encode_features(
     else:
         iterator = features
 
-    new_feature_list = []
     kept_columns = []
     encoded_columns = []
     columns_info = feature_matrix.ww.columns
 
+    new_feature_list = []
     for f in iterator:
         # TODO: features with multiple columns are not encoded by this method,
         # which can cause an "encoded" matrix with non-numeric values
         is_discrete = {"category", "foreign_key"}.intersection(
             f.column_schema.semantic_tags
         )
-        if f.number_output_features > 1 or not is_discrete:
-            if f.number_output_features > 1:
-                logger.warning(
-                    "Feature %s has multiple columns and will not "
-                    "be encoded.  This may result in a matrix with"
-                    " non-numeric values." % (f)
-                )
+        if f.number_output_features > 1:
+            logger.warning(
+                f"Feature {f} has multiple columns and will not be encoded.  This may result in a matrix with non-numeric values."
+            )
+            new_feature_list.append(f)
+            kept_columns.extend(f.get_feature_names())
+            continue
+
+        elif not is_discrete:
             new_feature_list.append(f)
             kept_columns.extend(f.get_feature_names())
             continue
@@ -143,10 +139,7 @@ def encode_features(
         val_counts = val_counts[val_counts > 0].to_frame()
         index_name = val_counts.index.name
         if index_name is None:
-            if "index" in val_counts.columns:
-                index_name = "level_0"
-            else:
-                index_name = "index"
+            index_name = "level_0" if "index" in val_counts.columns else "index"
         val_counts.reset_index(inplace=True)
         val_counts = val_counts.sort_values([f.get_name(), index_name], ascending=False)
         val_counts.set_index(index_name, inplace=True)

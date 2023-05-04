@@ -16,7 +16,7 @@ def replace_nan_with_None(df):
 
     def replace_val(val):
         if isinstance(val, (tuple, list)):
-            return list([None if pd.isna(x) else x for x in val])
+            return [None if pd.isna(x) else x for x in val]
         elif pd.isna(val):
             return None
         else:
@@ -33,10 +33,7 @@ def replace_categorical_columns(pdf):
     new_df = pd.DataFrame()
     for c in pdf.columns:
         col = pdf[c]
-        if col.dtype.name == "category":
-            new_df[c] = col.astype("string")
-        else:
-            new_df[c] = pdf[c]
+        new_df[c] = col.astype("string") if col.dtype.name == "category" else pdf[c]
     return new_df
 
 

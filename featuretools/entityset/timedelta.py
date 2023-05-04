@@ -58,10 +58,7 @@ class Timedelta(object):
         self.check_value(value, unit)
         self.times = self.fix_units()
 
-        if delta_obj is not None:
-            self.delta_obj = delta_obj
-        else:
-            self.delta_obj = self.get_unit_type()
+        self.delta_obj = delta_obj if delta_obj is not None else self.get_unit_type()
 
     @classmethod
     def from_dictionary(cls, dictionary):
@@ -69,17 +66,12 @@ class Timedelta(object):
         dict_values = dictionary["value"]
         if isinstance(dict_units, str) and isinstance(dict_values, (int, float)):
             return cls({dict_units: dict_values})
-        else:
-            all_units = dict()
-            for i in range(len(dict_units)):
-                all_units[dict_units[i]] = dict_values[i]
-            return cls(all_units)
+        all_units = {dict_units[i]: dict_values[i] for i in range(len(dict_units))}
+        return cls(all_units)
 
     @classmethod
     def make_singular(cls, s):
-        if len(s) > 1 and s.endswith("s"):
-            return s[:-1]
-        return s
+        return s[:-1] if len(s) > 1 and s.endswith("s") else s
 
     @classmethod
     def _check_unit_plural(cls, s):
@@ -122,7 +114,7 @@ class Timedelta(object):
             self.times = {unit: value}
 
     def fix_units(self):
-        fixed_units = dict()
+        fixed_units = {}
         for unit, value in self.times.items():
             unit = self._check_unit_plural(unit)
             if unit in self._readable_to_unit:
@@ -131,7 +123,7 @@ class Timedelta(object):
         return fixed_units
 
     def lower_readable_times(self):
-        readable_times = dict()
+        readable_times = {}
         for unit, value in self.times.items():
             readable_unit = self._readable_units[unit].lower()
             readable_times[readable_unit] = value
@@ -140,19 +132,17 @@ class Timedelta(object):
     def get_name(self):
         all_units = self.get_units()
         if self.has_multiple_units() is False:
-            return "{} {}".format(
-                self.times[all_units[0]], self._readable_units[all_units[0]]
-            )
+            return f"{self.times[all_units[0]]} {self._readable_units[all_units[0]]}"
         final_str = ""
         for unit, value in self.times.items():
             if value == 1:
                 unit = self.make_singular(unit)
-            final_str += "{} {} ".format(value, self._readable_units[unit])
+            final_str += f"{value} {self._readable_units[unit]} "
         return final_str[:-1]
 
     def get_arguments(self):
-        units = list()
-        values = list()
+        units = []
+        values = []
         for unit, value in self.times.items():
             units.append(unit)
             values.append(value)
@@ -162,34 +152,20 @@ class Timedelta(object):
             return {"unit": units, "value": values}
 
     def is_absolute(self):
-        for unit in self.get_units():
-            if unit not in self._absolute_units:
-                return False
-        return True
+        return all(unit in self._absolute_units for unit in self.get_units())
 
     def has_no_observations(self):
-        for unit in self.get_units():
-            if unit in self._Observations:
-                return False
-        return True
+        return all(unit not in self._Observations for unit in self.get_units())
 
     def has_multiple_units(self):
-        if len(self.get_units()) > 1:
-            return True
-        else:
-            return False
+        return len(self.get_units()) > 1
 
     def __eq__(self, other):
-        if not isinstance(other, Timedelta):
-            return False
-
-        return self.times == other.times
+        return self.times == other.times if isinstance(other, Timedelta) else False
 
     def __neg__(self):
         """Negate the timedelta"""
-        new_times = dict()
-        for unit, value in self.times.items():
-            new_times[unit] = -value
+        new_times = {unit: -value for unit, value in self.times.items()}
         if self.delta_obj is not None:
             return Timedelta(new_times, delta_obj=-self.delta_obj)
         else:

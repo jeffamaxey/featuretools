@@ -10,7 +10,7 @@ from featuretools.tests.testing_utils import make_ecommerce_entityset
 
 @pytest.fixture
 def feature_matrix():
-    feature_matrix = pd.DataFrame(
+    return pd.DataFrame(
         {
             "test": [0, 1, 2],
             "no_null": [np.nan, 0, 0],
@@ -21,7 +21,6 @@ def feature_matrix():
             "one_value": [1, 1, 1],
         }
     )
-    return feature_matrix
 
 
 @pytest.fixture

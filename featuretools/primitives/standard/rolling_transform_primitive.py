@@ -533,11 +533,7 @@ class RollingCount(TransformPrimitive):
             # The shift made to account for gap adds NaNs to the rolled series
             # Those values get counted towards min_periods when they shouldn't.
             # So we need to replace any of those partial values with NaNs
-            if not self.min_periods:
-                # when min periods is 0 or None it's treated the same as if it's 1
-                num_nans = self.gap
-            else:
-                num_nans = self.min_periods - 1 + self.gap
+            num_nans = self.min_periods - 1 + self.gap if self.min_periods else self.gap
             rolling_count_series.iloc[range(num_nans)] = np.nan
             return rolling_count_series.values
 

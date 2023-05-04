@@ -92,10 +92,7 @@ def test_aggregation_description(es):
     assert describe_feature(feature) == description
 
     stacked_agg = AggregationFeature(feature, "customers", Sum)
-    stacked_description = (
-        'The sum of t{} of all instances of "sessions" for each "id" '
-        'in "customers".'.format(description[1:-1])
-    )
+    stacked_description = f'The sum of t{description[1:-1]} of all instances of "sessions" for each "id" in "customers".'
     assert describe_feature(stacked_agg) == stacked_description
 
 
@@ -196,16 +193,16 @@ def test_multioutput_description(es):
 
 
 def test_generic_description(es):
+
+
+
     class NoName(TransformPrimitive):
         input_types = [ColumnSchema(semantic_tags={"category"})]
         output_type = ColumnSchema(semantic_tags={"category"})
 
         def generate_name(self, base_feature_names):
-            return "%s(%s%s)" % (
-                "NO_NAME",
-                ", ".join(base_feature_names),
-                self.get_args_string(),
-            )
+            return f'NO_NAME({", ".join(base_feature_names)}{self.get_args_string()})'
+
 
     class CustomAgg(AggregationPrimitive):
         name = "custom_aggregation"
@@ -291,10 +288,8 @@ def test_metadata(es, tmpdir):
     )
 
     metadata = {
-        "feature_descriptions": {
-            **identity_feature_descriptions,
-            **feature_description_dict,
-        },
+        "feature_descriptions": identity_feature_descriptions
+        | feature_description_dict,
         "primitive_templates": primitive_templates,
     }
     metadata_path = os.path.join(tmpdir, "description_metadata.json")

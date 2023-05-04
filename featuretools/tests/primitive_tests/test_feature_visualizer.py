@@ -55,10 +55,10 @@ def test_transform(es, trans_feat):
     graph = graph_feature(feat).source
 
     feat_name = feat.get_name()
-    prim_node = "0_{}_year".format(feat_name)
+    prim_node = f"0_{feat_name}_year"
     dataframe_table = "\u2605 customers (target)"
-    prim_edge = 'customers:cancel_date -> "{}"'.format(prim_node)
-    feat_edge = '"{}" -> customers:"{}"'.format(prim_node, feat_name)
+    prim_edge = f'customers:cancel_date -> "{prim_node}"'
+    feat_edge = f'"{prim_node}" -> customers:"{feat_name}"'
 
     graph_components = [feat_name, dataframe_table, prim_node, prim_edge, feat_edge]
     for component in graph_components:
@@ -97,14 +97,14 @@ def test_groupby_transform(es):
     graph = graph_feature(feat).source
 
     feat_name = feat.get_name()
-    prim_node = "0_{}_cum_max".format(feat_name)
-    groupby_node = "{}_groupby_customers--cohort".format(feat_name)
+    prim_node = f"0_{feat_name}_cum_max"
+    groupby_node = f"{feat_name}_groupby_customers--cohort"
     dataframe_table = "\u2605 customers (target)"
 
-    groupby_edge = 'customers:cohort -> "{}"'.format(groupby_node)
-    groupby_input = 'customers:age -> "{}"'.format(groupby_node)
-    prim_input = '"{}" -> "{}"'.format(groupby_node, prim_node)
-    feat_edge = '"{}" -> customers:"{}"'.format(prim_node, feat_name)
+    groupby_edge = f'customers:cohort -> "{groupby_node}"'
+    groupby_input = f'customers:age -> "{groupby_node}"'
+    prim_input = f'"{groupby_node}" -> "{prim_node}"'
+    feat_edge = f'"{prim_node}" -> customers:"{feat_name}"'
 
     graph_components = [
         feat_name,
@@ -141,19 +141,19 @@ def test_groupby_transform_direct_groupby(es):
 
     groupby_name = groupby.get_name()
     feat_name = feat.get_name()
-    join_node = "1_{}_join".format(groupby_name)
-    prim_node = "0_{}_cum_max".format(feat_name)
-    groupby_node = "{}_groupby_customers--{}".format(feat_name, groupby_name)
+    join_node = f"1_{groupby_name}_join"
+    prim_node = f"0_{feat_name}_cum_max"
+    groupby_node = f"{feat_name}_groupby_customers--{groupby_name}"
     customers_table = "\u2605 customers (target)"
     cohorts_table = "cohorts"
 
-    join_groupby = '"{}" -> customers:cohort'.format(join_node)
-    join_input = 'cohorts:cohort_name -> "{}"'.format(join_node)
-    join_out_edge = '"{}" -> customers:"{}"'.format(join_node, groupby_name)
-    groupby_edge = 'customers:"{}" -> "{}"'.format(groupby_name, groupby_node)
-    groupby_input = 'customers:age -> "{}"'.format(groupby_node)
-    prim_input = '"{}" -> "{}"'.format(groupby_node, prim_node)
-    feat_edge = '"{}" -> customers:"{}"'.format(prim_node, feat_name)
+    join_groupby = f'"{join_node}" -> customers:cohort'
+    join_input = f'cohorts:cohort_name -> "{join_node}"'
+    join_out_edge = f'"{join_node}" -> customers:"{groupby_name}"'
+    groupby_edge = f'customers:"{groupby_name}" -> "{groupby_node}"'
+    groupby_input = f'customers:age -> "{groupby_node}"'
+    prim_input = f'"{groupby_node}" -> "{prim_node}"'
+    feat_edge = f'"{prim_node}" -> customers:"{feat_name}"'
 
     graph_components = [
         groupby_name,
@@ -178,13 +178,13 @@ def test_groupby_transform_direct_groupby(es):
         "cohorts": [cohorts_table, "cohort_name"],
         "customers": [customers_table, "cohort", "age", groupby_name, feat_name],
     }
-    for dataframe in dataframes:
-        regex = r"{} \[label=<\n<TABLE.*?</TABLE>>".format(dataframe)
+    for dataframe, value in dataframes.items():
+        regex = f"{dataframe} \[label=<\n<TABLE.*?</TABLE>>"
         matches = re.findall(regex, graph, re.DOTALL)
         assert len(matches) == 1
 
         rows = re.findall(r"<TR.*?</TR>", matches[0], re.DOTALL)
-        assert len(rows) == len(dataframes[dataframe])
+        assert len(rows) == len(value)
 
         for row in rows:
             matched = False
@@ -201,15 +201,15 @@ def test_aggregation(es):
     graph = graph_feature(feat).source
 
     feat_name = feat.get_name()
-    prim_node = "0_{}_count".format(feat_name)
-    groupby_node = "{}_groupby_log--session_id".format(feat_name)
+    prim_node = f"0_{feat_name}_count"
+    groupby_node = f"{feat_name}_groupby_log--session_id"
 
     sessions_table = "\u2605 sessions (target)"
     log_table = "log"
-    groupby_edge = 'log:session_id -> "{}"'.format(groupby_node)
-    groupby_input = 'log:id -> "{}"'.format(groupby_node)
-    prim_input = '"{}" -> "{}"'.format(groupby_node, prim_node)
-    feat_edge = '"{}" -> sessions:"{}"'.format(prim_node, feat_name)
+    groupby_edge = f'log:session_id -> "{groupby_node}"'
+    groupby_input = f'log:id -> "{groupby_node}"'
+    prim_input = f'"{groupby_node}" -> "{prim_node}"'
+    feat_edge = f'"{prim_node}" -> sessions:"{feat_name}"'
 
     graph_components = [
         feat_name,
@@ -230,13 +230,13 @@ def test_aggregation(es):
         "log": [log_table, "id", "session_id"],
         "sessions": [sessions_table, feat_name],
     }
-    for dataframe in dataframes:
-        regex = r"{} \[label=<\n<TABLE.*?</TABLE>>".format(dataframe)
+    for dataframe, value in dataframes.items():
+        regex = f"{dataframe} \[label=<\n<TABLE.*?</TABLE>>"
         matches = re.findall(regex, graph, re.DOTALL)
         assert len(matches) == 1
 
         rows = re.findall(r"<TR.*?</TR>", matches[0], re.DOTALL)
-        assert len(rows) == len(dataframes[dataframe])
+        assert len(rows) == len(value)
         for row in rows:
             matched = False
             for i in dataframes[dataframe]:
@@ -255,15 +255,15 @@ def test_multioutput(es):
     graph = graph_feature(feat).source
 
     feat_name = feat.get_name()
-    prim_node = "0_{}_n_most_common".format(multioutput.get_name())
-    groupby_node = "{}_groupby_log--session_id".format(multioutput.get_name())
+    prim_node = f"0_{multioutput.get_name()}_n_most_common"
+    groupby_node = f"{multioutput.get_name()}_groupby_log--session_id"
 
     sessions_table = "\u2605 sessions (target)"
     log_table = "log"
-    groupby_edge = 'log:session_id -> "{}"'.format(groupby_node)
-    groupby_input = 'log:zipcode -> "{}"'.format(groupby_node)
-    prim_input = '"{}" -> "{}"'.format(groupby_node, prim_node)
-    feat_edge = '"{}" -> sessions:"{}"'.format(prim_node, feat_name)
+    groupby_edge = f'log:session_id -> "{groupby_node}"'
+    groupby_input = f'log:zipcode -> "{groupby_node}"'
+    prim_input = f'"{groupby_node}" -> "{prim_node}"'
+    feat_edge = f'"{prim_node}" -> sessions:"{feat_name}"'
 
     graph_components = [
         feat_name,
@@ -284,13 +284,13 @@ def test_multioutput(es):
         "log": [log_table, "zipcode", "session_id"],
         "sessions": [sessions_table, feat_name],
     }
-    for dataframe in dataframes:
-        regex = r"{} \[label=<\n<TABLE.*?</TABLE>>".format(dataframe)
+    for dataframe, value in dataframes.items():
+        regex = f"{dataframe} \[label=<\n<TABLE.*?</TABLE>>"
         matches = re.findall(regex, graph, re.DOTALL)
         assert len(matches) == 1
 
         rows = re.findall(r"<TR.*?</TR>", matches[0], re.DOTALL)
-        assert len(rows) == len(dataframes[dataframe])
+        assert len(rows) == len(value)
         for row in rows:
             matched = False
             for i in dataframes[dataframe]:
@@ -310,18 +310,18 @@ def test_direct(es):
 
     d1_name = d1.get_name()
     d2_name = d2.get_name()
-    prim_node1 = "1_{}_join".format(d1_name)
-    prim_node2 = "0_{}_join".format(d2_name)
+    prim_node1 = f"1_{d1_name}_join"
+    prim_node2 = f"0_{d2_name}_join"
 
     log_table = "\u2605 log (target)"
     sessions_table = "sessions"
     customers_table = "customers"
-    groupby_edge1 = '"{}" -> sessions:customer_id'.format(prim_node1)
-    groupby_edge2 = '"{}" -> log:session_id'.format(prim_node2)
-    groupby_input1 = 'customers:engagement_level -> "{}"'.format(prim_node1)
-    groupby_input2 = 'sessions:"{}" -> "{}"'.format(d1_name, prim_node2)
-    d1_edge = '"{}" -> sessions:"{}"'.format(prim_node1, d1_name)
-    d2_edge = '"{}" -> log:"{}"'.format(prim_node2, d2_name)
+    groupby_edge1 = f'"{prim_node1}" -> sessions:customer_id'
+    groupby_edge2 = f'"{prim_node2}" -> log:session_id'
+    groupby_input1 = f'customers:engagement_level -> "{prim_node1}"'
+    groupby_input2 = f'sessions:"{d1_name}" -> "{prim_node2}"'
+    d1_edge = f'"{prim_node1}" -> sessions:"{d1_name}"'
+    d2_edge = f'"{prim_node2}" -> log:"{d2_name}"'
 
     graph_components = [
         d1_name,
@@ -347,13 +347,13 @@ def test_direct(es):
         "log": [log_table, "session_id", d2_name],
     }
 
-    for dataframe in dataframes:
-        regex = r"{} \[label=<\n<TABLE.*?</TABLE>>".format(dataframe)
+    for dataframe, value in dataframes.items():
+        regex = f"{dataframe} \[label=<\n<TABLE.*?</TABLE>>"
         matches = re.findall(regex, graph, re.DOTALL)
         assert len(matches) == 1
 
         rows = re.findall(r"<TR.*?</TR>", matches[0], re.DOTALL)
-        assert len(rows) == len(dataframes[dataframe])
+        assert len(rows) == len(value)
         for row in rows:
             matched = False
             for i in dataframes[dataframe]:
@@ -370,18 +370,16 @@ def test_stacked(es, trans_feat):
 
     feat_name = stacked.get_name()
     intermediate_name = trans_feat.get_name()
-    agg_primitive = "0_{}_mode".format(feat_name)
-    trans_primitive = "1_{}_year".format(intermediate_name)
-    groupby_node = "{}_groupby_customers--cohort".format(feat_name)
+    agg_primitive = f"0_{feat_name}_mode"
+    trans_primitive = f"1_{intermediate_name}_year"
+    groupby_node = f"{feat_name}_groupby_customers--cohort"
 
-    trans_prim_edge = 'customers:cancel_date -> "{}"'.format(trans_primitive)
-    intermediate_edge = '"{}" -> customers:"{}"'.format(
-        trans_primitive, intermediate_name
-    )
-    groupby_edge = 'customers:cohort -> "{}"'.format(groupby_node)
-    groupby_input = 'customers:"{}" -> "{}"'.format(intermediate_name, groupby_node)
-    agg_input = '"{}" -> "{}"'.format(groupby_node, agg_primitive)
-    feat_edge = '"{}" -> cohorts:"{}"'.format(agg_primitive, feat_name)
+    trans_prim_edge = f'customers:cancel_date -> "{trans_primitive}"'
+    intermediate_edge = f'"{trans_primitive}" -> customers:"{intermediate_name}"'
+    groupby_edge = f'customers:cohort -> "{groupby_node}"'
+    groupby_input = f'customers:"{intermediate_name}" -> "{groupby_node}"'
+    agg_input = f'"{groupby_node}" -> "{agg_primitive}"'
+    feat_edge = f'"{agg_primitive}" -> cohorts:"{feat_name}"'
 
     graph_components = [
         feat_name,
@@ -400,12 +398,12 @@ def test_stacked(es, trans_feat):
         assert component in graph
 
     agg_primitive = agg_primitive.replace("(", "\\(").replace(")", "\\)")
-    agg_node = re.findall('"{}" \\[label.*'.format(agg_primitive), graph)
+    agg_node = re.findall(f'"{agg_primitive}" \\[label.*', graph)
     assert len(agg_node) == 1
     assert "Step 2" in agg_node[0]
 
     trans_primitive = trans_primitive.replace("(", "\\(").replace(")", "\\)")
-    trans_node = re.findall('"{}" \\[label.*'.format(trans_primitive), graph)
+    trans_node = re.findall(f'"{trans_primitive}" \\[label.*', graph)
     assert len(trans_node) == 1
     assert "Step 1" in trans_node[0]
 

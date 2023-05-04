@@ -100,16 +100,11 @@ def test_base_features_not_in_list(es):
 def test_later_schema_version(es, caplog):
     def test_version(major, minor, patch, raises=True):
         version = ".".join([str(v) for v in [major, minor, patch]])
-        if raises:
-            warning_text = (
-                "The schema version of the saved features"
-                "(%s) is greater than the latest supported (%s). "
-                "You may need to upgrade featuretools. Attempting to load features ..."
-                % (version, SCHEMA_VERSION)
-            )
-        else:
-            warning_text = None
-
+        warning_text = (
+            f"The schema version of the saved features({version}) is greater than the latest supported ({SCHEMA_VERSION}). You may need to upgrade featuretools. Attempting to load features ..."
+            if raises
+            else None
+        )
         _check_schema_version(version, es, warning_text, caplog, "warn")
 
     major, minor, patch = [int(s) for s in SCHEMA_VERSION.split(".")]
@@ -124,15 +119,11 @@ def test_earlier_schema_version(es, caplog):
     def test_version(major, minor, patch, raises=True):
         version = ".".join([str(v) for v in [major, minor, patch]])
 
-        if raises:
-            warning_text = (
-                "The schema version of the saved features"
-                "(%s) is no longer supported by this version "
-                "of featuretools. Attempting to load features ..." % (version)
-            )
-        else:
-            warning_text = None
-
+        warning_text = (
+            f"The schema version of the saved features({version}) is no longer supported by this version of featuretools. Attempting to load features ..."
+            if raises
+            else None
+        )
         _check_schema_version(version, es, warning_text, caplog, "log")
 
     major, minor, patch = [int(s) for s in SCHEMA_VERSION.split(".")]
@@ -179,10 +170,7 @@ def test_unknown_primitive_type(es):
     with pytest.raises(RuntimeError) as excinfo:
         deserializer.to_list()
 
-    error_text = (
-        'Primitive "FakePrimitive" in module "%s" not found'
-        % ft.primitives.Max.__module__
-    )
+    error_text = f'Primitive "FakePrimitive" in module "{ft.primitives.Max.__module__}" not found'
     assert error_text == str(excinfo.value)
 
 

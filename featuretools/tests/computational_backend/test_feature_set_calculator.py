@@ -238,7 +238,6 @@ def test_make_agg_feat_multiple_dtypes(es):
 
 
 def test_make_agg_feat_where_different_identity_feat(es):
-    feats = []
     where_cmps = [
         LessThanScalar,
         GreaterThanScalar,
@@ -247,19 +246,18 @@ def test_make_agg_feat_where_different_identity_feat(es):
         EqualScalar,
         NotEqualScalar,
     ]
-    for where_cmp in where_cmps:
-        feats.append(
-            ft.Feature(
-                es["log"].ww["id"],
-                parent_dataframe_name="sessions",
-                where=ft.Feature(
-                    es["log"].ww["datetime"],
-                    primitive=where_cmp(datetime(2011, 4, 10, 10, 40, 1)),
-                ),
-                primitive=Count,
-            )
+    feats = [
+        ft.Feature(
+            es["log"].ww["id"],
+            parent_dataframe_name="sessions",
+            where=ft.Feature(
+                es["log"].ww["datetime"],
+                primitive=where_cmp(datetime(2011, 4, 10, 10, 40, 1)),
+            ),
+            primitive=Count,
         )
-
+        for where_cmp in where_cmps
+    ]
     df = ft.calculate_feature_matrix(
         entityset=es, features=feats, instance_ids=[0, 1, 2, 3]
     )
@@ -268,7 +266,7 @@ def test_make_agg_feat_where_different_identity_feat(es):
     for i, where_cmp in enumerate(where_cmps):
         name = feats[i].get_name()
         instances = df[name]
-        v0, v1, v2, v3 = instances[0:4]
+        v0, v1, v2, v3 = instances[:4]
         if where_cmp == LessThanScalar:
             assert v0 == 5
             assert v1 == 4
@@ -338,7 +336,7 @@ def test_make_agg_feat_where_count_feat(es):
 
     name = feat.get_name()
     instances = df[name]
-    v0, v1 = instances[0:2]
+    v0, v1 = instances[:2]
     assert v0 == 2
     assert v1 == 2
 
@@ -368,7 +366,7 @@ def test_make_compare_feat(es):
 
     name = feat.get_name()
     instances = df[name]
-    v0, v1, v2 = instances[0:3]
+    v0, v1, v2 = instances[:3]
     assert v0
     assert v1
     assert not v2
@@ -893,7 +891,7 @@ def test_empty_child_dataframe(parent_child):
     )
     fm = to_pandas(fm)
 
-    for column in data.keys():
+    for column in data:
         pd.testing.assert_series_equal(
             fm[column], answer[column], check_names=False, check_index=False
         )
@@ -917,7 +915,7 @@ def test_empty_child_dataframe(parent_child):
     )
     fm2 = to_pandas(fm2)
 
-    for column in data.keys():
+    for column in data:
         pd.testing.assert_series_equal(
             fm[column], answer[column], check_names=False, check_index=False
         )
