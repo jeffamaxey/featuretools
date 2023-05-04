@@ -33,13 +33,12 @@ def entityset_to_description(entityset):
     relationships = [
         relationship.to_dictionary() for relationship in entityset.relationships
     ]
-    data_description = {
+    return {
         "schema_version": SCHEMA_VERSION,
         "id": entityset.id,
         "dataframes": dataframes,
         "relationships": relationships,
     }
-    return data_description
 
 
 def write_data_description(entityset, path, profile_name=None, **kwargs):
@@ -85,7 +84,10 @@ def create_archive(tmpdir):
     file_name = "es-{date:%Y-%m-%d_%H%M%S}.tar".format(date=datetime.datetime.now())
     file_path = os.path.join(tmpdir, file_name)
     tar = tarfile.open(str(file_path), "w")
-    tar.add(str(tmpdir) + "/data_description.json", arcname="/data_description.json")
-    tar.add(str(tmpdir) + "/data", arcname="/data")
+    tar.add(
+        f"{str(tmpdir)}/data_description.json",
+        arcname="/data_description.json",
+    )
+    tar.add(f"{str(tmpdir)}/data", arcname="/data")
     tar.close()
     return file_path

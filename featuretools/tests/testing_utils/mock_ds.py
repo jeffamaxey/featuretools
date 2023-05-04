@@ -250,8 +250,8 @@ def make_ecommerce_dataframes(with_integer_time_index=False):
         + [np.nan] * 2
     )
 
-    latlong = list([(values[i], values_2[i]) for i, _ in enumerate(values)])
-    latlong2 = list([(values_2[i], -values[i]) for i, _ in enumerate(values)])
+    latlong = [(values[i], values_2[i]) for i, _ in enumerate(values)]
+    latlong2 = [(values_2[i], -values[i]) for i, _ in enumerate(values)]
     zipcodes = list(
         ["02116"] * 5
         + ["02116-3899"] * 4

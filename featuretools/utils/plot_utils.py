@@ -41,8 +41,7 @@ def get_graphviz_format(graphviz, to_file):
         valid_formats = graphviz.FORMATS
         if format_ not in valid_formats:
             raise ValueError(
-                "Unknown format. Make sure your format is"
-                + " amongst the following: %s" % valid_formats
+                f"Unknown format. Make sure your format is amongst the following: {valid_formats}"
             )
     else:
         format_ = None

@@ -102,7 +102,7 @@ def test_normalize_time_index_as_copy_column_no_time_index(es):
 
 
 def test_cannot_re_add_relationships_that_already_exists(es):
-    warn_text = "Not adding duplicate relationship: " + str(es.relationships[0])
+    warn_text = f"Not adding duplicate relationship: {str(es.relationships[0])}"
     before_len = len(es.relationships)
     rel = es.relationships[0]
     with pytest.warns(UserWarning, match=warn_text):
@@ -347,7 +347,7 @@ def test_query_by_values_secondary_time_index(es):
 
     for col in ["cancel_date", "cancel_reason"]:
         nulls = result.loc[all_instances][col].isnull() == [False, True, True]
-        assert nulls.all(), "Some instance has data it shouldn't for column %s" % col
+        assert nulls.all(), f"Some instance has data it shouldn't for column {col}"
 
 
 def test_query_by_id(es):
@@ -756,16 +756,17 @@ def test_converts_dtype_after_init(df4):
         category_dtype = "string"
 
     df4["category"] = df4["category"].astype(category_dtype)
-    if not isinstance(df4, pd.DataFrame):
-        logical_types = {
+    logical_types = (
+        None
+        if isinstance(df4, pd.DataFrame)
+        else {
             "id": Integer,
             "category": Categorical,
             "category_int": Categorical,
             "ints": Integer,
             "floats": Double,
         }
-    else:
-        logical_types = None
+    )
     es = EntitySet(id="test")
     es.add_dataframe(
         dataframe_name="test_dataframe",
@@ -939,7 +940,7 @@ def test_dataframe_init(es):
             "category": Categorical,
             "number": Integer,
         }
-        logical_types.update(extra_logical_types)
+        logical_types |= extra_logical_types
     es.add_dataframe(
         df.copy(),
         dataframe_name="test_dataframe",
@@ -961,7 +962,7 @@ def test_dataframe_init(es):
     assert es_df_shape == df_shape
     assert es["test_dataframe"].ww.index == "id"
     assert es["test_dataframe"].ww.time_index == "time"
-    assert set([v for v in es["test_dataframe"].ww.columns]) == set(df.columns)
+    assert set(list(es["test_dataframe"].ww.columns)) == set(df.columns)
 
     assert es["test_dataframe"]["time"].dtype == df["time"].dtype
     if es.dataframe_type == Library.SPARK.value:
@@ -1710,7 +1711,7 @@ def test_make_time_index_keeps_original_sorting():
         "flight_time": [datetime(1997, 4, 1) for i in range(1000)],
         "flight_id": [1 for i in range(350)] + [2 for i in range(650)],
     }
-    order = [i for i in range(1000)]
+    order = list(range(1000))
     df = pd.DataFrame.from_dict(trips)
     es = EntitySet("flights")
     es.add_dataframe(
@@ -1789,10 +1790,7 @@ def test_secondary_time_index(es):
 
 def test_sizeof(es):
     es.add_last_time_indexes()
-    total_size = 0
-    for df in es.dataframes:
-        total_size += df.__sizeof__()
-
+    total_size = sum(df.__sizeof__() for df in es.dataframes)
     assert es.__sizeof__() == total_size
 
 
@@ -1845,10 +1843,11 @@ def test_datetime64_conversion(datetime3):
     else:
         df["time"] = df["time"].dt.tz_localize("UTC")
 
-    if not isinstance(df, pd.DataFrame):
-        logical_types = {"id": Integer, "ints": Integer, "time": Datetime}
-    else:
-        logical_types = None
+    logical_types = (
+        None
+        if isinstance(df, pd.DataFrame)
+        else {"id": Integer, "ints": Integer, "time": Datetime}
+    )
     es = EntitySet(id="test")
     es.add_dataframe(
         dataframe_name="test_dataframe",
@@ -1888,15 +1887,15 @@ def index_df(request):
 
 
 def test_same_index_values(index_df):
-    if not isinstance(index_df, pd.DataFrame):
-        logical_types = {
+    logical_types = (
+        None
+        if isinstance(index_df, pd.DataFrame)
+        else {
             "id": Integer,
             "transaction_time": Datetime,
             "first_dataframe_time": Integer,
         }
-    else:
-        logical_types = None
-
+    )
     es = ft.EntitySet("example")
 
     error_text = (
@@ -1936,7 +1935,6 @@ def test_use_time_index(index_df):
             "transaction_time": Datetime,
             "first_dataframe_time": Integer,
         }
-        bad_semantic_tags = {"transaction_time": "time_index"}
         logical_types = {
             "id": Integer,
             "transaction_time": Datetime,
@@ -1944,9 +1942,9 @@ def test_use_time_index(index_df):
         }
     else:
         bad_ltypes = {"transaction_time": Datetime}
-        bad_semantic_tags = {"transaction_time": "time_index"}
         logical_types = None
 
+    bad_semantic_tags = {"transaction_time": "time_index"}
     es = ft.EntitySet()
 
     error_text = re.escape(

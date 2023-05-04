@@ -385,10 +385,8 @@ def test_rename(pd_es):
     assert cum_count.unique_name() != copy_feat.unique_name()
     assert cum_count.get_name() != copy_feat.get_name()
     assert all(
-        [
-            x.generate_name() == y.generate_name()
-            for x, y in zip(cum_count.base_features, copy_feat.base_features)
-        ]
+        x.generate_name() == y.generate_name()
+        for x, y in zip(cum_count.base_features, copy_feat.base_features)
     )
     assert cum_count.dataframe_name == copy_feat.dataframe_name
 
@@ -405,7 +403,7 @@ def test_groupby_no_data(pd_es):
     )
     cvalues = df[last_feat.get_name()].values
     assert len(cvalues) == 2
-    assert all([pd.isnull(value) for value in cvalues])
+    assert all(pd.isnull(value) for value in cvalues)
 
 
 def test_groupby_uses_calc_time(pd_es):

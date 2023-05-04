@@ -149,7 +149,7 @@ def remove_highly_correlated_features(
         for f_name in features_to_check:
             assert (
                 f_name in feature_matrix.columns
-            ), "feature named {} is not in feature matrix".format(f_name)
+            ), f"feature named {f_name} is not in feature matrix"
 
     if features_to_keep is None:
         features_to_keep = []
@@ -201,9 +201,8 @@ def _apply_feature_selection(keep, feature_matrix, features=None):
                     new_features.append(f)
                 else:
                     new_features.extend(slices)
-            else:
-                if f.get_name() in new_feature_names:
-                    new_features.append(f)
+            elif f.get_name() in new_feature_names:
+                new_features.append(f)
 
         return new_matrix, new_features
     return new_matrix

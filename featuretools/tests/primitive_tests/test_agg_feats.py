@@ -89,6 +89,9 @@ def test_makes_count(es):
 
 
 def test_count_null(pd_es):
+
+
+
     class Count(AggregationPrimitive):
         name = "count"
         input_types = [[ColumnSchema(semantic_tags={"foreign_key"})], [ColumnSchema()]]
@@ -108,14 +111,15 @@ def test_count_null(pd_es):
             return count_func
 
         def generate_name(
-            self,
-            base_feature_names,
-            relationship_path_name,
-            parent_dataframe_name,
-            where_str,
-            use_prev_str,
-        ):
-            return "COUNT(%s%s%s)" % (relationship_path_name, where_str, use_prev_str)
+                    self,
+                    base_feature_names,
+                    relationship_path_name,
+                    parent_dataframe_name,
+                    where_str,
+                    use_prev_str,
+                ):
+            return f"COUNT({relationship_path_name}{where_str}{use_prev_str})"
+
 
     count_null = ft.Feature(
         pd_es["log"].ww["value"],
@@ -255,9 +259,12 @@ def test_init_and_name(es):
     # check all primitives have name
     for attribute_string in dir(ft.primitives):
         attr = getattr(ft.primitives, attribute_string)
-        if isclass(attr):
-            if issubclass(attr, AggregationPrimitive) and attr != AggregationPrimitive:
-                assert getattr(attr, "name") is not None
+        if (
+            isclass(attr)
+            and issubclass(attr, AggregationPrimitive)
+            and attr != AggregationPrimitive
+        ):
+            assert getattr(attr, "name") is not None
 
     agg_primitives = get_aggregation_primitives().values()
     # If Dask EntitySet use only Dask compatible primitives
@@ -280,7 +287,7 @@ def test_init_and_name(es):
             # use the input_types matching function from DFS
             matching_types = match(it, features)
             if len(matching_types) == 0:
-                raise Exception("Agg Primitive %s not tested" % agg_prim.name)
+                raise Exception(f"Agg Primitive {agg_prim.name} not tested")
             for t in matching_types:
                 instance = ft.Feature(
                     t, parent_dataframe_name="sessions", primitive=agg_prim
@@ -692,6 +699,7 @@ def test_makes_numtrue(es):
 
 
 def test_make_three_most_common(pd_es):
+
     class NMostCommoner(AggregationPrimitive):
         name = "pd_top3"
         input_types = ([ColumnSchema(semantic_tags={"category"})],)
@@ -718,11 +726,9 @@ def test_make_three_most_common(pd_es):
         trans_primitives=[],
     )
 
-    df = fm[["PD_TOP3(log.product_id)[%s]" % i for i in range(3)]]
+    df = fm[[f"PD_TOP3(log.product_id)[{i}]" for i in range(3)]]
 
-    assert set(df.iloc[0].values[:2]) == set(
-        ["coke zero", "toothpaste"]
-    )  # coke zero and toothpaste have same number of occurrences
+    assert set(df.iloc[0].values[:2]) == {"coke zero", "toothpaste"}
     assert df.iloc[0].values[2] in [
         "car",
         "brown bag",
@@ -748,12 +754,12 @@ def test_stacking_multi(pd_es):
         primitive=threecommon,
     )
 
-    stacked = []
-    for i in range(3):
-        stacked.append(
-            ft.Feature(tc[i], parent_dataframe_name="customers", primitive=NumUnique)
+    stacked = [
+        ft.Feature(
+            tc[i], parent_dataframe_name="customers", primitive=NumUnique
         )
-
+        for i in range(3)
+    ]
     fm = ft.calculate_feature_matrix(stacked, entityset=pd_es, instance_ids=[0, 1, 2])
 
     correct_vals = [[3, 2, 1], [2, 1, 0], [0, 0, 0]]
@@ -765,10 +771,7 @@ def test_stacking_multi(pd_es):
         f = "NUM_UNIQUE(sessions.N_MOST_COMMON(log.product_id)[%d])" % i
         cols = fm.columns
         assert f in cols
-        assert (
-            fm[cols[i]].tolist() == correct_vals[i]
-            or fm[cols[i]].tolist() == correct_vals1[i]
-        )
+        assert fm[cols[i]].tolist() in [correct_vals[i], correct_vals1[i]]
 
 
 def test_use_previous_pd_dateoffset(es):

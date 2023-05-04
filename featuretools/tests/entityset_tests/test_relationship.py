@@ -16,7 +16,7 @@ def test_relationship_path(es):
     for i, edge in enumerate(path_list):
         assert path[i] == edge
 
-    assert [edge for edge in path] == path_list
+    assert list(path) == path_list
 
 
 def test_relationship_path_name(es):
@@ -38,7 +38,7 @@ def test_relationship_path_name(es):
 
 
 def test_relationship_path_dataframes(es):
-    assert list(RelationshipPath([]).dataframes()) == []
+    assert not list(RelationshipPath([]).dataframes())
 
     log_to_sessions = Relationship(es, "sessions", "id", "log", "session_id")
     sessions_to_customers = Relationship(

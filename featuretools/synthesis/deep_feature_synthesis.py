@@ -146,10 +146,7 @@ class DeepFeatureSynthesis(object):
 
         if target_dataframe_name not in entityset.dataframe_dict:
             es_name = entityset.id or "entity set"
-            msg = "Provided target dataframe %s does not exist in %s" % (
-                target_dataframe_name,
-                es_name,
-            )
+            msg = f"Provided target dataframe {target_dataframe_name} does not exist in {es_name}"
             raise KeyError(msg)
 
         # need to change max_depth to None because DFs terminates when  <0
@@ -276,10 +273,11 @@ class DeepFeatureSynthesis(object):
             + self.where_primitives
             + self.groupby_trans_primitives
         )
-        bad_primitives = [
-            prim.name for prim in all_primitives if df_library not in prim.compatibility
-        ]
-        if bad_primitives:
+        if bad_primitives := [
+            prim.name
+            for prim in all_primitives
+            if df_library not in prim.compatibility
+        ]:
             msg = "Selected primitives are incompatible with {} EntitySets: {}"
             raise ValueError(msg.format(df_library.value, ", ".join(bad_primitives)))
 
@@ -345,14 +343,11 @@ class DeepFeatureSynthesis(object):
 
         def filt(f):
             # remove identity features of the ID field of the target dataframe
-            if (
-                isinstance(f, IdentityFeature)
-                and f.dataframe_name == self.target_dataframe_name
-                and f.column_name == self.es[self.target_dataframe_name].ww.index
-            ):
-                return False
-
-            return True
+            return (
+                not isinstance(f, IdentityFeature)
+                or f.dataframe_name != self.target_dataframe_name
+                or f.column_name != self.es[self.target_dataframe_name].ww.index
+            )
 
         # filter out features with undesired return types
         if return_types != "all":
@@ -382,12 +377,7 @@ class DeepFeatureSynthesis(object):
         assert isinstance(self.drop_contains, list), "drop_contains must be a list"
         f_keep = []
         for f in features:
-            keep = True
-            for contains in self.drop_contains:
-                if contains in f.get_name():
-                    keep = False
-                    break
-
+            keep = all(contains not in f.get_name() for contains in self.drop_contains)
             if f.get_name() in self.drop_exact:
                 keep = False
 
@@ -612,11 +602,10 @@ class DeepFeatureSynthesis(object):
         def is_valid_feature(f):
             if isinstance(f, IdentityFeature):
                 return True
-            if isinstance(f, DirectFeature) and getattr(
-                f.base_features[0], "column_name", None
-            ):
-                return True
-            return False
+            return bool(
+                isinstance(f, DirectFeature)
+                and getattr(f.base_features[0], "column_name", None)
+            )
 
         features = [
             f for f in all_features[dataframe.ww.name].values() if is_valid_feature(f)
@@ -651,10 +640,7 @@ class DeepFeatureSynthesis(object):
           dataframe (DataFrame): DataFrame to calculate features for.
         """
 
-        new_max_depth = None
-        if max_depth is not None:
-            new_max_depth = max_depth - 1
-
+        new_max_depth = max_depth - 1 if max_depth is not None else None
         # Keep track of features to add until the end to avoid applying
         # transform primitives to features that were also built by transform primitives
         features_to_add = []
@@ -708,11 +694,9 @@ class DeepFeatureSynthesis(object):
 
             # get columns to use as groupbys, use IDs as default unless other groupbys specified
             if any(
-                [
-                    "include_groupby_columns" in option
-                    and dataframe.ww.name in option["include_groupby_columns"]
-                    for option in current_options
-                ]
+                "include_groupby_columns" in option
+                and dataframe.ww.name in option["include_groupby_columns"]
+                for option in current_options
             ):
                 column_schemas = "all"
             else:
@@ -738,10 +722,8 @@ class DeepFeatureSynthesis(object):
                         if require_direct_input and (
                             _all_direct_and_same_path(matching_input + (groupby,))
                             or not any(
-                                [
-                                    isinstance(feature, DirectFeature)
-                                    for feature in (matching_input + (groupby,))
-                                ]
+                                isinstance(feature, DirectFeature)
+                                for feature in (matching_input + (groupby,))
                             )
                         ):
                             continue
@@ -857,10 +839,8 @@ class DeepFeatureSynthesis(object):
 
                 # limits the aggregation feature by the given allowed feature types.
                 if not any(
-                    [
-                        issubclass(type(agg_prim), type(primitive))
-                        for primitive in self.where_primitives
-                    ]
+                    issubclass(type(agg_prim), type(primitive))
+                    for primitive in self.where_primitives
                 ):
                     continue
 
@@ -868,10 +848,8 @@ class DeepFeatureSynthesis(object):
                     # limits the where feats so they are different than base feats
                     base_names = [f.unique_name() for f in new_f.base_features]
                     if any(
-                        [
-                            base_feat.unique_name() in base_names
-                            for base_feat in where.base_features
-                        ]
+                        base_feat.unique_name() in base_names
+                        for base_feat in where.base_features
                     ):
                         continue
 
@@ -907,14 +885,17 @@ class DeepFeatureSynthesis(object):
 
         for feat in dataframe_features:
             f = dataframe_features[feat]
-            if column_schemas == "all" or any(
-                is_valid_input(f.column_schema, schema) for schema in column_schemas
+            if (
+                column_schemas == "all"
+                or any(
+                    is_valid_input(f.column_schema, schema)
+                    for schema in column_schemas
+                )
+            ) and (
+                max_depth is None
+                or f.get_depth(stop_at=self.seed_features) <= max_depth
             ):
-                if (
-                    max_depth is None
-                    or f.get_depth(stop_at=self.seed_features) <= max_depth
-                ):
-                    selected_features.append(f)
+                selected_features.append(f)
 
         return selected_features
 
@@ -1024,23 +1005,23 @@ def check_stacking(primitive, inputs):
             return False
 
     for f in inputs:
-        if f.primitive.base_of_exclude is not None:
-            if isinstance(primitive, tuple(f.primitive.base_of_exclude)):
-                return False
+        if f.primitive.base_of_exclude is not None and isinstance(
+            primitive, tuple(f.primitive.base_of_exclude)
+        ):
+            return False
 
     for f in inputs:
-        if primitive.stack_on_self is True:
-            if isinstance(f.primitive, primitive.__class__):
-                continue
-        if primitive.stack_on is not None:
-            if isinstance(f.primitive, tuple(primitive.stack_on)):
-                continue
-        else:
+        if primitive.stack_on_self is True and isinstance(
+            f.primitive, primitive.__class__
+        ):
             continue
-        if f.primitive.base_of is not None:
-            if primitive.__class__ in f.primitive.base_of:
-                continue
-        else:
+        if primitive.stack_on is None:
+            continue
+        if isinstance(f.primitive, tuple(primitive.stack_on)):
+            continue
+        if f.primitive.base_of is None:
+            continue
+        if primitive.__class__ in f.primitive.base_of:
             continue
         return False
 
@@ -1048,11 +1029,7 @@ def check_stacking(primitive, inputs):
 
 
 def match_by_schema(features, column_schema):
-    matches = []
-    for f in features:
-        if is_valid_input(f.column_schema, column_schema):
-            matches += [f]
-    return matches
+    return [f for f in features if is_valid_input(f.column_schema, column_schema)]
 
 
 def match(
@@ -1093,10 +1070,7 @@ def match(
 
             # commutative uses frozenset instead of tuple because it doesn't
             # want multiple orderings of the same input
-            if commutative:
-                new_match = frozenset(new_match)
-            else:
-                new_match = tuple(new_match)
+            new_match = frozenset(new_match) if commutative else tuple(new_match)
             matching_inputs.add(new_match)
 
     if commutative:
@@ -1118,7 +1092,7 @@ def handle_primitive(primitive):
 def check_primitive(
     primitive, prim_type, aggregation_primitive_dict, transform_primitive_dict
 ):
-    if prim_type == "transform" or prim_type == "groupby transform":
+    if prim_type in ["transform", "groupby transform"]:
         prim_dict = transform_primitive_dict
         supertype = TransformPrimitive
         arg_name = (
@@ -1127,7 +1101,7 @@ def check_primitive(
             else "groupby_trans_primitives"
         )
         s = "a transform"
-    if prim_type == "aggregation" or prim_type == "where":
+    if prim_type in ["aggregation", "where"]:
         prim_dict = aggregation_primitive_dict
         supertype = AggregationPrimitive
         arg_name = (
@@ -1139,16 +1113,13 @@ def check_primitive(
         prim_string = camel_and_title_to_snake(primitive)
         if prim_string not in prim_dict:
             raise ValueError(
-                "Unknown {} primitive {}. "
-                "Call ft.primitives.list_primitives() to get"
-                " a list of available primitives".format(prim_type, primitive)
+                f"Unknown {prim_type} primitive {primitive}. Call ft.primitives.list_primitives() to get a list of available primitives"
             )
         primitive = prim_dict[prim_string]
     primitive = handle_primitive(primitive)
     if not isinstance(primitive, supertype):
         raise ValueError(
-            "Primitive {} in {} is not {} "
-            "primitive".format(type(primitive), arg_name, s)
+            f"Primitive {type(primitive)} in {arg_name} is not {s} primitive"
         )
     return primitive
 
@@ -1162,11 +1133,7 @@ def _all_direct_and_same_path(input_features):
 def _features_have_same_path(input_features):
     path = input_features[0].relationship_path
 
-    for f in input_features[1:]:
-        if f.relationship_path != path:
-            return False
-
-    return True
+    return all(f.relationship_path == path for f in input_features[1:])
 
 
 def _direct_of_dataframe(feature, parent_dataframe):

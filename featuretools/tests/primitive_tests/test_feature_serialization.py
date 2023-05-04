@@ -39,12 +39,10 @@ from featuretools.tests.testing_utils import check_names
 
 BUCKET_NAME = "test-bucket"
 WRITE_KEY_NAME = "test-key"
-TEST_S3_URL = "s3://{}/{}".format(BUCKET_NAME, WRITE_KEY_NAME)
-TEST_FILE = "test_feature_serialization_feature_schema_{}_entityset_schema_{}_2022_2_16.json".format(
-    SCHEMA_VERSION, ENTITYSET_SCHEMA_VERSION
-)
-S3_URL = "s3://featuretools-static/" + TEST_FILE
-URL = "https://featuretools-static.s3.amazonaws.com/" + TEST_FILE
+TEST_S3_URL = f"s3://{BUCKET_NAME}/{WRITE_KEY_NAME}"
+TEST_FILE = f"test_feature_serialization_feature_schema_{SCHEMA_VERSION}_entityset_schema_{ENTITYSET_SCHEMA_VERSION}_2022_2_16.json"
+S3_URL = f"s3://featuretools-static/{TEST_FILE}"
+URL = f"https://featuretools-static.s3.amazonaws.com/{TEST_FILE}"
 TEST_CONFIG = "CheckConfigPassesOn"
 TEST_KEY = "test_access_key_features"
 
@@ -90,6 +88,7 @@ def test_pickle_features(es, tmpdir):
 
 
 def test_pickle_features_with_custom_primitive(pd_es, tmpdir):
+
     class NewMax(AggregationPrimitive):
         name = "new_max"
         input_types = [ColumnSchema(semantic_tags={"numeric"})]
@@ -102,7 +101,7 @@ def test_pickle_features_with_custom_primitive(pd_es, tmpdir):
         features_only=True,
     )
 
-    assert any([isinstance(feat.primitive, NewMax) for feat in features_original])
+    assert any(isinstance(feat.primitive, NewMax) for feat in features_original)
     pickle_features_test_helper(asizeof(pd_es), features_original, str(tmpdir))
 
 
@@ -180,17 +179,15 @@ def s3_client():
     from moto import mock_s3
 
     with mock_s3():
-        s3 = boto3.resource("s3")
-        yield s3
+        yield boto3.resource("s3")
     os.environ.clear()
-    os.environ.update(_environ)
+    os.environ |= _environ
 
 
 @pytest.fixture
 def s3_bucket(s3_client):
     s3_client.create_bucket(Bucket=BUCKET_NAME, ACL="public-read-write")
-    s3_bucket = s3_client.Bucket(BUCKET_NAME)
-    yield s3_bucket
+    yield s3_client.Bucket(BUCKET_NAME)
 
 
 def test_serialize_features_mock_s3(es, s3_client, s3_bucket):
@@ -238,17 +235,14 @@ def setup_test_profile(monkeypatch, tmpdir):
     except EnvironmentError:
         pass
 
-    f = open(test_path, "w+")
-    f.write("[test]\n")
-    f.write("aws_access_key_id=AKIAIOSFODNN7EXAMPLE\n")
-    f.write("aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n")
-    f.close()
-    f = open(test_path_config, "w+")
-    f.write("[profile test]\n")
-    f.write("region=us-east-2\n")
-    f.write("output=text\n")
-    f.close()
-
+    with open(test_path, "w+") as f:
+        f.write("[test]\n")
+        f.write("aws_access_key_id=AKIAIOSFODNN7EXAMPLE\n")
+        f.write("aws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n")
+    with open(test_path_config, "w+") as f:
+        f.write("[profile test]\n")
+        f.write("region=us-east-2\n")
+        f.write("output=text\n")
     yield
     os.remove(test_path)
     os.remove(test_path_config)

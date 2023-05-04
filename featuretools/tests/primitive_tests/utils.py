@@ -11,7 +11,4 @@ def get_number_from_offset(offset):
         can be used here; however, care should be taken by the user to remember what that timespan is when
         writing tests, as comparing 7 from 7D to 1 from 1W may not behave as expected.
     """
-    if isinstance(offset, str):
-        return int(offset[0])
-    else:
-        return offset
+    return int(offset[0]) if isinstance(offset, str) else offset

@@ -2,11 +2,7 @@ from featuretools.entityset.relationship import RelationshipPath
 
 
 def feature_with_name(features, name):
-    for f in features:
-        if f.get_name() == name:
-            return True
-
-    return False
+    return any(f.get_name() == name for f in features)
 
 
 def backward_path(es, dataframe_ids):

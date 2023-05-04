@@ -93,8 +93,7 @@ def test_override_boolean(es):
 
     to_test = [[True, True, True], [True, True, False], [False, False, True]]
 
-    features = []
-    features.append(count_lo.OR(count_hi))
+    features = [count_lo.OR(count_hi)]
     features.append(count_lo.AND(count_hi))
     features.append(~(count_lo.AND(count_hi)))
 
@@ -164,12 +163,12 @@ def test_scalar_overrides(es):
         2 * value2,
         2 / value2,
         2 % value2,
-        2 < value2,
-        2 > value2,
-        2 == value2,
-        2 != value2,
-        2 <= value2,
-        2 >= value2,
+        value2 > 2,
+        value2 < 2,
+        value2 == 2,
+        value2 != 2,
+        value2 >= 2,
+        value2 <= 2,
     ]
     for feat in reverse_feats:
         f = ft.Feature(value2, primitive=feat(2))
